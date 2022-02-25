@@ -4,3 +4,8 @@
 .project
 LICENSE
 .gitlab-ci.yml
+
+
+
+
+*.class

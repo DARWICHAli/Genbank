@@ -7,18 +7,16 @@ if [ $# = 0 ]; then
     echo "compile"
     for file in project/src/*.java
     do
+        echo "compiling" $file
         javac $file
     done
     cd project
     mkdir bin
-    pwd
     mv src/*.class bin/
-    echo 'mv bin to bin'
-    #mv X ../Bin
     exit 0
 
 elif [[ $1 == "clean" ]]; then
-    rm -r project/Bin
+    rm -r project/bin
     exit 0
 elif [[ $1 == "test" ]]; then
     echo "begin Testing"

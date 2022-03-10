@@ -2,6 +2,8 @@
 .settings
 .classpath
 .project
+LICENSE
+.gitlab-ci.yml
 
 
 .metadata

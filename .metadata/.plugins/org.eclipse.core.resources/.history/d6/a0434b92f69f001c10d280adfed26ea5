@@ -1,0 +1,34 @@
+package src.GUI;
+import java.awt.BorderLayout;
+
+import javax.swing.*;
+
+public final class InfoPanel extends Panel {
+	
+	private JLabel title;
+	private JTextPane textPane; 
+	
+	InfoPanel(){
+		super("Information");
+	}
+
+	@Override
+	protected void createComponents() {
+		 title = new JLabel("Information");
+		 title.setSize(WIDTH, HEIGHT*2/10);
+		 textPane = new JTextPane();
+		 textPane.setSize(WIDTH, HEIGHT*8/10);
+		 textPane.setText("cool info here");
+	}
+
+	@Override
+	protected void addComponents() {
+		add(title, BorderLayout.NORTH);
+		add(textPane, BorderLayout.CENTER);
+	}
+
+	@Override
+	protected void styleComponents() {
+		
+	}
+}

@@ -1,0 +1,32 @@
+package src.GUI;
+import javax.swing.*;
+
+public final class InfoPanel extends Panel {
+	InfoPanel(){
+		super("Info");
+	}
+
+	@Override
+	protected void initLayout() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	protected void createComponents() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	protected void addComponents() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	protected void styleComponents() {
+		// TODO Auto-generated method stub
+		
+	}
+}

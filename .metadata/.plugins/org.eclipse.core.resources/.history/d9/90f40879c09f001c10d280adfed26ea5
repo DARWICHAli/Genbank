@@ -1,0 +1,25 @@
+package src.GUI;
+import javax.swing.*;
+
+public final class LogPanel extends Panel {
+	
+	
+	
+	public LogPanel(String title) {
+		super(title);
+	}
+	
+	public void initLayout() {
+		
+	}
+	public void createComponents() {
+		
+	}
+	public void addComponents() {
+		
+	}
+	public void styleComponents() {
+		
+	}
+
+}

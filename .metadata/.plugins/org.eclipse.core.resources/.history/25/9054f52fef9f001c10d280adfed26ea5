@@ -1,0 +1,10 @@
+package src.GUI;
+import javax.swing.*;
+
+public class EmptyPanel extends JPanel{
+
+	EmptyPanel(Color color){
+		super();
+		setBackground(color);
+	}
+}

@@ -1,0 +1,32 @@
+package src.GUI;
+import java.awt.GridLayout;
+
+import javax.swing.*;
+
+public class ControlsPanel extends JPanel {
+	
+	private JButton start;
+	private JButton stop;
+	private JButton reset;
+	
+	public ControlsPanel(){
+		initLayout();
+		createComponents();
+		addComponents();
+	}
+	
+	private void initLayout() {
+		setLayout(new GridLayout(1, 3, 20, 20));
+	}
+	
+	private void createComponents() {
+		start = new JButton(new ImageIcon("/home/sihartist/Desktop/Genbank/project/images/start.png"));
+		stop = new JButton("s");
+		reset = new JButton("r");
+	}
+	
+	private void addComponents() {
+		add(start); add(stop); add(reset);
+	}
+	
+}

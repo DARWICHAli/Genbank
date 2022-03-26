@@ -1,0 +1,43 @@
+package Parser;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+public class Downloader {
+	
+	private HttpURLConnection m_connection;
+	
+    protected BufferedReader get(URL _url) throws IOException {
+        // Close previous connection if any
+        if (m_connection != null)
+            m_connection.disconnect();
+
+        // Initialize request
+
+            m_connection = (HttpURLConnection) _url.openConnection();
+            m_connection.setConnectTimeout(Utils.getConnectionTimeout());
+            m_connection.setRequestMethod("GET");
+
+
+        // Execute request
+        int statusCode;
+            // Get response code (executes request)
+            statusCode = m_connection.getResponseCode();
+
+
+        final BufferedReader in;
+        if (statusCode == HttpURLConnection.HTTP_OK) {
+                in = new BufferedReader(new InputStreamReader(m_connection.getInputStream()));
+
+        } else {
+            m_connection.disconnect();
+            final String message = "Unable to download data : status " + statusCode;
+
+        }
+
+        return in;
+    }
+}

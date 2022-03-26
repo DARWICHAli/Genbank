@@ -1,0 +1,27 @@
+package src.GUI;
+import javax.swing.*;
+
+public final class MenuPanel extends Panel {
+	MenuPanel(){
+		super("menu");
+	}
+
+
+	@Override
+	protected void createComponents() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	protected void addComponents() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	protected void styleComponents() {
+		// TODO Auto-generated method stub
+		
+	}
+}

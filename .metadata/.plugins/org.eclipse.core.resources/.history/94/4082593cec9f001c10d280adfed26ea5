@@ -1,0 +1,8 @@
+package src.GUI;
+import javax.swing.*;
+
+public class ControlsPanel extends JPanel {
+	ControlsPanel(){
+		super();
+	}
+}

@@ -1,0 +1,28 @@
+package src.GUI;
+import java.awt.*;
+import javax.swing.*;
+
+public final class LogPanel extends Panel {
+	
+	private final static String title = "Logs";
+	private JTextPane textPane;
+	private Scrollbar scrollPanel;
+	
+	public LogPanel() {
+		super(title);
+	}
+	
+	public void initLayout() {
+		
+	}
+	public void createComponents() {
+		
+	}
+	public void addComponents() {
+		
+	}
+	public void styleComponents() {
+		
+	}
+
+}

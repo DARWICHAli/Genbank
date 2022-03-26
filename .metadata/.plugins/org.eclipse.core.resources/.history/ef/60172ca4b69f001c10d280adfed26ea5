@@ -1,0 +1,14 @@
+package src;
+import javax.swing.*;
+
+public class Genbank {
+
+	public Genbank() {
+		
+	}
+		
+	public static void main(String[] args) {
+		MainFrame.getSingleton();
+	}
+
+}

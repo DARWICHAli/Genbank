@@ -1,0 +1,35 @@
+package src.GUI;
+import java.awt.*;
+import javax.swing.*;
+
+import static src.GUI.Utils.*;
+
+public class TitlePanel extends JPanel {
+	private final JLabel title;
+	private final int fontSize;
+	private final Color background;
+	
+	public TitlePanel(String title, int fontSize, Color background) {
+		this.title = new JLabel(title);
+		this.fontSize = fontSize;
+		this.background = background;
+	}
+	
+    private void initLayout() {
+        this.setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
+        title.setLayout(new GridBagLayout());
+    }
+
+    private void addComponents() {
+        this.add(Box.createHorizontalGlue());
+        this.add(title, BorderLayout.CENTER);
+        this.add(Box.createHorizontalGlue());
+    }
+
+    private void swagComponent() {
+        this.setBackground(background);
+        this.setBorder(BorderFactory.createEmptyBorder(m_SIZE / 2, m_SIZE / 2, m_SIZE / 2, m_SIZE / 2));
+        title.setForeground(white);
+        title.setFont(new Font(s_FONT, Font.PLAIN, m_SIZE));
+    }
+}

@@ -1,0 +1,14 @@
+package src.GUI;
+import javax.swing.*;
+
+public class ControlsPanel extends JPanel {
+	
+	private JButton start;
+	private JButton stop;
+	private JButton resume;
+	
+	ControlsPanel(){
+		super();
+	}
+	
+}

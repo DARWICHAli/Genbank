@@ -4,6 +4,7 @@
 .project
 LICENSE
 .gitlab-ci.yml
+.gitkeep
 
 
 .metadata

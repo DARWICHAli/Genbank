@@ -1,7 +1,8 @@
 from ui import *
 from PyQt5.QtWidgets import QApplication
+import asyncio
 
-if __name__ == "__main__":
+def main():
     import sys
     app = QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
@@ -11,3 +12,4 @@ if __name__ == "__main__":
     MainWindow.show()
     sys.exit(app.exec_())
  
+asyncio.run(main())

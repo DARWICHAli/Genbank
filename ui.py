@@ -1,6 +1,8 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtGui, QtQuickWidgets, QtWidgets
 from PyQt5.QtWidgets import QFileSystemModel
+from PyQt5.QtCore import QStringListModel
 from functools import partial
+from matplotlib.ft2font import VERTICAL
 import numpy as np
 import genbank as genbank
 
@@ -162,7 +164,7 @@ class Ui_MainWindow(object):
                 sizePolicy.setHeightForWidth(self.progressBar.sizePolicy().hasHeightForWidth())
                 self.progressBar.setSizePolicy(sizePolicy)
                 self.progressBar.setStyleSheet("color: rgb(7, 32, 51);")
-                self.progressBar.setProperty("value", 24)
+                self.progressBar.setProperty("value", 0)
                 self.progressBar.setObjectName("progressBar")
                 self.left_container.addWidget(self.progressBar)
 
@@ -205,9 +207,6 @@ class Ui_MainWindow(object):
                 self.buttonReset.setObjectName("buttonReset")
                 self.buttons_container.addWidget(self.buttonReset)
 
-                # connecter les boutons aux fonctions
-
-                
 
 
                 # container de gauche (menu et log)
@@ -437,17 +436,21 @@ class Ui_MainWindow(object):
                 self.container_log = QtWidgets.QHBoxLayout()
                 self.container_log.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
                 self.container_log.setObjectName("container_log")
-                self.logTextEdit = QtWidgets.QTextEdit(self.horizontalLayoutWidget_2)
-                sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding)
-                sizePolicy.setHorizontalStretch(0)
-                sizePolicy.setVerticalStretch(0)
-                sizePolicy.setHeightForWidth(self.logTextEdit.sizePolicy().hasHeightForWidth())
-                self.logTextEdit.setSizePolicy(sizePolicy)
-                self.logTextEdit.setMinimumSize(QtCore.QSize(500, 0))
-                self.logTextEdit.setStyleSheet("background-color: rgb(255, 255, 255);\n"
-        "color: rgb(123, 79, 2);")
-                self.logTextEdit.setObjectName("logTextEdit")
-                self.container_log.addWidget(self.logTextEdit)
+
+                self.logOutput = QtWidgets.QTextEdit()
+                self.logOutput.setReadOnly(True)
+                self.logOutput.setLineWrapMode(QtWidgets.QTextEdit.NoWrap)
+                font = self.logOutput.font()
+                font.setFamily("Courier")
+                font.setPointSize(10)
+                self.logOutput.moveCursor(QtGui.QTextCursor.End)
+                self.logOutput.setCurrentFont(font)
+                sb = self.logOutput.verticalScrollBar()
+                sb.setValue(sb.maximum())
+                
+                self.container_log.addWidget(self.logOutput)
+                
+
                 self.right_container.addLayout(self.container_log)
                 self.right_container.setStretch(0, 2)
                 self.right_container.setStretch(1, 4)
@@ -653,11 +656,11 @@ class Ui_MainWindow(object):
                 self.checkBox_mobile_intron.setText(_translate("MainWindow", "Intron"))
                 self.label_inputRegion.setText(_translate("MainWindow", "Personnalisé:"))
                 self.labelLog.setText(_translate("MainWindow", "Log"))
-                self.logTextEdit.setHtml(_translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-        "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-        "p, li { white-space: pre-wrap; }\n"
-        "</style></head><body style=\" font-family:\'Ubuntu\'; font-size:11pt; font-weight:400; font-style:normal;\">\n"
-        "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">fzfrfrfr</p></body></html>"))
+        #         self.logTextEdit.setHtml(_translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+        # "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+        # "p, li { white-space: pre-wrap; }\n"
+        # "</style></head><body style=\" font-family:\'Ubuntu\'; font-size:11pt; font-weight:400; font-style:normal;\">\n"
+        # "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"></p></body></html>"))
                 self.mainTitle.setText(_translate("MainWindow", "GENBANK"))
                 self.menuParametres.setTitle(_translate("MainWindow", "Paramètres"))
                 self.menuChoixKingdoms.setTitle(_translate("MainWindow", "Choix des Kingdoms"))

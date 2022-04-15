@@ -1,8 +1,0 @@
-package src.GUI;
-import javax.swing.*;
-
-public final class InfoPanel extends Panel {
-	InfoPanel(){
-		super("Info");
-	}
-}

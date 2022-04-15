@@ -1,6 +1,0 @@
-package src.GUI;
-import javax.swing.*;
-
-public final class MenuPanel extends Panel {
-
-}

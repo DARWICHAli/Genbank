@@ -1,6 +1,0 @@
-package src.GUI;
-import javax.swing.*;
-
-public class TitlePanel extends JPanel {
-	
-}

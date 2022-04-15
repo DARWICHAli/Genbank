@@ -1,9 +1,0 @@
-package src.GUI;
-import java.awt.*;
-import javax.swing.*;
-
-public class TitlePanel extends JPanel {
-	private final JLabel title;
-	private final int fontSize;
-	private final Color background;
-}

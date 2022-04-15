@@ -1,6 +1,0 @@
-package src.GUI;
-import java.awt.*;
-
-public class Utils {
-	public final white = Color.
-}

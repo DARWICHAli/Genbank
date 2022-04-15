@@ -1,7 +1,0 @@
-package src.GUI;
-import javax.swing.*;
-
-public final class LogPanel extends IPanel {
-
-
-}

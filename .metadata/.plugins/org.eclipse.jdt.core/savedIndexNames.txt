@@ -1,4 +1,0 @@
-INDEX VERSION 1.131+/home/sihartist/Desktop/Genbank/.metadata/.plugins/org.eclipse.jdt.core
-4155219971.index
-2829050800.index
-1865797976.index

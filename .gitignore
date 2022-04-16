@@ -3,7 +3,9 @@
 .idea/
 __pycache__
 .metadata
-
+GENOME_REPORTS
+Results
+pickle
 # Vagrant
 .vagrant/
 

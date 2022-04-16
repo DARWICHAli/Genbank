@@ -10,7 +10,7 @@ from PyQt5 import QtWidgets
 from pip import main
 from ui import Ui_MainWindow
 from downloader_thread import ThreadClass, kingdoms_choice, regions_choice
-
+import os
 
 
 class Genbank(QtWidgets.QMainWindow):
@@ -89,7 +89,9 @@ class Genbank(QtWidgets.QMainWindow):
 ################################################################################
 
 	def pause(self, str):
-		print("pause")
+		index = self.sender().index
+		if(index == 1):
+			print("pause")
 
 ################################################################################
 ################################################################################
@@ -97,14 +99,22 @@ class Genbank(QtWidgets.QMainWindow):
 
 	def reset(self):
 		try:
+			if os.getcwd().endswith("GENOME_REPORTS"):
+				os.chdir('../')
 			shutil.rmtree('./GENOME_REPORTS')
-		except: pass
+		except: print("cannot delete GENOME_REPORTS")
 		try:
+			if os.getcwd().endswith("pickle"):
+				os.chdir('../')
 			shutil.rmtree('./pickle')
-		except: pass
+		except: print("cannot delete pickle")
 		try:
-			shutil.rmtree('./Results')
-		except: pass
+			if os.getcwd().endswith("Results"):
+				os.chdir('../')
+			shutil.rmtree('./Results/.')
+		except: print("cannot delete Results/.")
+		self.mainwindow.logOutput.clear()
+		self.mainwindow.progressBar.setValue(0)
 		print("reset")
 
 
@@ -134,7 +144,9 @@ class Genbank(QtWidgets.QMainWindow):
 		self.thread[1].dataframe_result.connect(self.get_result)
 		self.thread[1].progress_signal.connect(self.update_progress_bar)
 		self.thread[1].time_signal.connect(self.start)
+		
+
+
+	def stop_worker(self):
+		self.thread[1].stop()
 		self.thread[1].stop_signal.connect(self.pause)
-
-
-

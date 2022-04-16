@@ -82,6 +82,7 @@ class Ui_MainWindow(object):
                 self.legende_container.setSpacing(8)
                 self.legende_container.setObjectName("legende_container")
                 self.graphicViewActualise = QtWidgets.QGraphicsView(self.horizontalLayoutWidget_2)
+                self.graphicViewActualise.setStyleSheet("background-color: rgb(255, 200, 0);")
                 sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
                 sizePolicy.setHorizontalStretch(10)
                 sizePolicy.setVerticalStretch(10)
@@ -98,7 +99,7 @@ class Ui_MainWindow(object):
                 sizePolicy.setVerticalStretch(0)
                 sizePolicy.setHeightForWidth(self.labelActualise.sizePolicy().hasHeightForWidth())
                 self.labelActualise.setSizePolicy(sizePolicy)
-                self.labelActualise.setStyleSheet("color: rgb(0, 250, 125);")
+                self.labelActualise.setStyleSheet("color: rgb(255, 200, 0);")
                 self.labelActualise.setAlignment(QtCore.Qt.AlignCenter)
                 self.labelActualise.setObjectName("labelActualise")
                 self.legende_container.addWidget(self.labelActualise)
@@ -112,6 +113,7 @@ class Ui_MainWindow(object):
                 self.graphicViewCree.setSizePolicy(sizePolicy)
                 self.graphicViewCree.setMaximumSize(QtCore.QSize(30, 30))
                 self.graphicViewCree.setObjectName("graphicViewCree")
+                self.graphicViewCree.setStyleSheet("background-color: rgb(0, 255, 40);")
                 self.legende_container.addWidget(self.graphicViewCree)
                 self.labelCree = QtWidgets.QLabel(self.horizontalLayoutWidget_2)
                 sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -122,7 +124,7 @@ class Ui_MainWindow(object):
                 self.labelCree.setStyleSheet("")
                 self.labelCree.setAlignment(QtCore.Qt.AlignCenter)
                 self.labelCree.setObjectName("labelCree")
-                self.labelCree.setStyleSheet("color: rgb(0, 250, 125);")
+                self.labelCree.setStyleSheet("color: rgb(0, 255, 40);")
                 self.legende_container.addWidget(self.labelCree)
 
                 #code couleur fichier supprimé
@@ -134,6 +136,7 @@ class Ui_MainWindow(object):
                 self.graphicViewSupprime.setSizePolicy(sizePolicy)
                 self.graphicViewSupprime.setMaximumSize(QtCore.QSize(30, 30))
                 self.graphicViewSupprime.setObjectName("graphicViewSupprime")
+                self.graphicViewSupprime.setStyleSheet("background-color: rgb(255, 0, 0);")
                 self.legende_container.addWidget(self.graphicViewSupprime)
                 self.labelSupprime = QtWidgets.QLabel(self.horizontalLayoutWidget_2)
                 sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -144,7 +147,7 @@ class Ui_MainWindow(object):
                 self.labelSupprime.setStyleSheet("")
                 self.labelSupprime.setAlignment(QtCore.Qt.AlignCenter)
                 self.labelSupprime.setObjectName("labelSupprime")
-                self.labelSupprime.setStyleSheet("color: rgb(0, 250, 125);")
+                self.labelSupprime.setStyleSheet("color: rgb(255, 0, 0);")
                 self.legende_container.addWidget(self.labelSupprime)
                 self.left_container.addLayout(self.legende_container)
 
@@ -715,6 +718,6 @@ class Ui_MainWindow(object):
                 self.buttonStart.clicked.connect(genbank.worker)
 
                 #self.buttonStart.clicked.connect(genbank.Genbank.worker)
-                self.buttonStop.clicked.connect(genbank.pause)
+                self.buttonStop.clicked.connect(genbank.stop_worker)
                 self.buttonReset.clicked.connect(genbank.reset)
                 

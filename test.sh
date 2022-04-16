@@ -3,7 +3,11 @@
 
 echo "testing"
 
-for file in project/test/test_u/*
+for file in project/*
 do
-    echo $file
+    for res in project/test/test_u/*
+    do
+        echo $res $file
+
+    done
 done

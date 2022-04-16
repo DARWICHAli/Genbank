@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from Bio import Entrez
 import pandas as pd
 import os
@@ -36,6 +35,7 @@ def reset_tree(root):
     os.mkdir("../GENOME_REPORTS")
     os.chdir('../GENOME_REPORTS')
     os.mkdir('IDS')
+    Kingdom_ID_list = ["Archaea.ids", "Bacteria.ids", "Eukaryota.ids", "Viruses.ids"]
 
     with FTP('ftp.ncbi.nlm.nih.gov') as ftp:
         ftp.login()  # Connexion to the FTP server
@@ -44,8 +44,8 @@ def reset_tree(root):
         ftp.cwd('genomes/GENOME_REPORTS')
         ftp.retrbinary('RETR overview.txt', open("overview.txt",'wb').write)
         ftp.cwd('IDS')
-        for filename in ftp.nlst():
-            ftp.retrbinary('RETR '+ filename, open("IDS/" + filename, 'wb').write)
+        for Kingdom_ID in Kingdom_ID_list:
+            ftp.retrbinary('RETR '+ Kingdom_ID, open("IDS/" + Kingdom_ID, 'wb').write)
     if VERBOSE:
         print("Genome overview and IDS downloaded !")
 

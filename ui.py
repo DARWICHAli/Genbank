@@ -1,3 +1,5 @@
+import PyQt5
+import qtawesome as qta
 from PyQt5 import QtCore, QtGui, QtQuickWidgets, QtWidgets
 from PyQt5.QtWidgets import QFileSystemModel
 from PyQt5.QtCore import QStringListModel
@@ -5,6 +7,8 @@ from functools import partial
 from matplotlib.ft2font import VERTICAL
 import numpy as np
 import genbank as genbank
+from PyQt5.QtGui import QPixmap
+import os
 
 class Ui_MainWindow(object):
         def setupUi(self, MainWindow):
@@ -19,11 +23,17 @@ class Ui_MainWindow(object):
                 self.centralwidget.setSizePolicy(sizePolicy)
                 self.centralwidget.setObjectName("centralwidget")
 
+
+                icon = QtGui.QIcon()
+                icon.addPixmap(QtGui.QPixmap("./images/genome.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+                MainWindow.setWindowIcon(icon)
+
+
                 # background graphic view
                 self.mainGraphicView = QtWidgets.QGraphicsView(self.centralwidget)
                 self.mainGraphicView.setGeometry(QtCore.QRect(0, -100, 1171, 881))
-                self.mainGraphicView.setStyleSheet("background-color: rgb(245, 250, 255);\n"
-        "color: rgb(7, 32, 51);")
+                self.mainGraphicView.setStyleSheet("background-color: rgb(0, 4, 38);\n"
+        "color: rgb(0, 250, 125);")
                 self.mainGraphicView.setObjectName("mainGraphicView")
 
 
@@ -60,7 +70,7 @@ class Ui_MainWindow(object):
                 font.setItalic(False)
                 font.setWeight(50)
                 self.labelArborescence.setFont(font)
-                self.labelArborescence.setStyleSheet("font: 25pt \"Futura\";\n" "")
+                self.labelArborescence.setStyleSheet("font: 25pt \"Futura\";\n" "color: rgb(255, 255, 255);")
                 self.labelArborescence.setAlignment(QtCore.Qt.AlignCenter)
                 self.labelArborescence.setObjectName("labelArborescence")
                 self.left_container.addWidget(self.labelArborescence)
@@ -88,7 +98,7 @@ class Ui_MainWindow(object):
                 sizePolicy.setVerticalStretch(0)
                 sizePolicy.setHeightForWidth(self.labelActualise.sizePolicy().hasHeightForWidth())
                 self.labelActualise.setSizePolicy(sizePolicy)
-                self.labelActualise.setStyleSheet("")
+                self.labelActualise.setStyleSheet("color: rgb(0, 250, 125);")
                 self.labelActualise.setAlignment(QtCore.Qt.AlignCenter)
                 self.labelActualise.setObjectName("labelActualise")
                 self.legende_container.addWidget(self.labelActualise)
@@ -112,6 +122,7 @@ class Ui_MainWindow(object):
                 self.labelCree.setStyleSheet("")
                 self.labelCree.setAlignment(QtCore.Qt.AlignCenter)
                 self.labelCree.setObjectName("labelCree")
+                self.labelCree.setStyleSheet("color: rgb(0, 250, 125);")
                 self.legende_container.addWidget(self.labelCree)
 
                 #code couleur fichier supprimé
@@ -133,6 +144,7 @@ class Ui_MainWindow(object):
                 self.labelSupprime.setStyleSheet("")
                 self.labelSupprime.setAlignment(QtCore.Qt.AlignCenter)
                 self.labelSupprime.setObjectName("labelSupprime")
+                self.labelSupprime.setStyleSheet("color: rgb(0, 250, 125);")
                 self.legende_container.addWidget(self.labelSupprime)
                 self.left_container.addLayout(self.legende_container)
 
@@ -141,7 +153,9 @@ class Ui_MainWindow(object):
                 self.layout_for_tree.setObjectName("layout_for_tree")
 
                 self.model = QFileSystemModel()
-                self.model.setRootPath("./Results/Eukaryota")
+                if not os.path.exists('./Results'):
+                        os.mkdir("./Results")
+                self.model.setRootPath("")
                 
                 # tree View
                 self.treeView = QtWidgets.QTreeView(self.horizontalLayoutWidget_2)
@@ -151,7 +165,13 @@ class Ui_MainWindow(object):
                 self.treeView.setObjectName("treeView")
                 self.treeView.setAnimated(False)
                 self.treeView.setSortingEnabled(True)
+                self.treeView.hideColumn(1)
+                self.treeView.hideColumn(2)
+                self.treeView.hideColumn(3)
+                self.treeView.setHeaderHidden(True)
+                self.treeView.setColumnWidth(0, 200)
                 self.treeView.setWindowTitle("Results")
+                self.treeView.setStyleSheet("color: rgb(255,255,255);\n" "background-color: rgb(0, 4, 28);")
 
                 self.layout_for_tree.addWidget(self.treeView)
                 self.left_container.addLayout(self.layout_for_tree)
@@ -163,7 +183,7 @@ class Ui_MainWindow(object):
                 sizePolicy.setVerticalStretch(0)
                 sizePolicy.setHeightForWidth(self.progressBar.sizePolicy().hasHeightForWidth())
                 self.progressBar.setSizePolicy(sizePolicy)
-                self.progressBar.setStyleSheet("color: rgb(7, 32, 51);")
+                self.progressBar.setStyleSheet("background-color: rgb(0, 4, 8);\n" "color:rgb(0, 250, 125);")
                 self.progressBar.setProperty("value", 0)
                 self.progressBar.setObjectName("progressBar")
                 self.left_container.addWidget(self.progressBar)
@@ -181,7 +201,7 @@ class Ui_MainWindow(object):
                 sizePolicy.setVerticalStretch(0)
                 sizePolicy.setHeightForWidth(self.buttonStart.sizePolicy().hasHeightForWidth())
                 self.buttonStart.setSizePolicy(sizePolicy)
-                self.buttonStart.setStyleSheet("color: rgb(7, 32, 51);")
+                self.buttonStart.setStyleSheet("color: rgb(0, 250, 125);\n" "background-color:rgb(0, 4, 38);")
                 self.buttonStart.setObjectName("buttonStart")
                 self.buttons_container.addWidget(self.buttonStart)
 
@@ -192,7 +212,7 @@ class Ui_MainWindow(object):
                 sizePolicy.setVerticalStretch(0)
                 sizePolicy.setHeightForWidth(self.buttonStop.sizePolicy().hasHeightForWidth())
                 self.buttonStop.setSizePolicy(sizePolicy)
-                self.buttonStop.setStyleSheet("color: rgb(7, 32, 51);")
+                self.buttonStop.setStyleSheet("color: rgb(0, 250, 125);\n" "background-color:rgb(0, 4, 38);")
                 self.buttonStop.setObjectName("buttonStop")
                 self.buttons_container.addWidget(self.buttonStop)
 
@@ -203,7 +223,7 @@ class Ui_MainWindow(object):
                 sizePolicy.setVerticalStretch(0)
                 sizePolicy.setHeightForWidth(self.buttonReset.sizePolicy().hasHeightForWidth())
                 self.buttonReset.setSizePolicy(sizePolicy)
-                self.buttonReset.setStyleSheet("color: rgb(7, 32, 51);")
+                self.buttonReset.setStyleSheet("color: rgb(0, 250, 125);\n" "background-color:rgb(0, 4, 38);")
                 self.buttonReset.setObjectName("buttonReset")
                 self.buttons_container.addWidget(self.buttonReset)
 
@@ -226,7 +246,7 @@ class Ui_MainWindow(object):
                 sizePolicy.setVerticalStretch(0)
                 sizePolicy.setHeightForWidth(self.labelPreferences.sizePolicy().hasHeightForWidth())
                 self.labelPreferences.setSizePolicy(sizePolicy)
-                self.labelPreferences.setStyleSheet("font: 75 25pt \"Futura\";\n""")
+                self.labelPreferences.setStyleSheet("font: 75 25pt \"Futura\";\n" "color:rgb(255, 255, 255);")
                 self.labelPreferences.setAlignment(QtCore.Qt.AlignCenter)
                 self.labelPreferences.setObjectName("labelPreferences")
                 self.right_container.addWidget(self.labelPreferences)
@@ -251,7 +271,7 @@ class Ui_MainWindow(object):
                 sizePolicy.setVerticalStretch(0)
                 sizePolicy.setHeightForWidth(self.labelKingdoms.sizePolicy().hasHeightForWidth())
                 self.labelKingdoms.setSizePolicy(sizePolicy)
-                self.labelKingdoms.setStyleSheet("\n" "font: 75 18pt \"Futura\";")
+                self.labelKingdoms.setStyleSheet("\n" "font: 75 18pt \"Futura\";\n" "color:rgb(0, 250, 125);")
                 self.labelKingdoms.setObjectName("labelKingdoms")
                 self.inner_menu_container.addWidget(self.labelKingdoms)
                 self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
@@ -259,27 +279,28 @@ class Ui_MainWindow(object):
                 self.horizontalLayout_2.setObjectName("horizontalLayout_2")
 
                 self.checkBox_eukaryota = QtWidgets.QCheckBox(self.horizontalLayoutWidget_2)
-                self.checkBox_eukaryota.setStyleSheet("background-color: rgb(255, 255, 255);")
+                self.checkBox_eukaryota.setStyleSheet("color: rgb(0, 4, 38);\n" "background-color:white;")
+                
                 self.checkBox_eukaryota.setChecked(True)
                 self.checkBox_eukaryota.setObjectName("checkBox_eukaryota")
                 self.horizontalLayout_2.addWidget(self.checkBox_eukaryota)
 
                 self.checkBox_bacteria = QtWidgets.QCheckBox(self.horizontalLayoutWidget_2)
-                self.checkBox_bacteria.setStyleSheet("background-color: rgb(255, 255, 255);")
+                self.checkBox_bacteria.setStyleSheet("color: rgb(0, 4, 38);\n" "background-color:white;")
                 self.checkBox_bacteria.setChecked(True)
                 self.checkBox_bacteria.setObjectName("checkBox_bacteria")
                 self.horizontalLayout_2.addWidget(self.checkBox_bacteria)
 
 
                 self.checkBox_prokaryota = QtWidgets.QCheckBox(self.horizontalLayoutWidget_2)
-                self.checkBox_prokaryota.setStyleSheet("background-color: rgb(255, 255, 255);")
+                self.checkBox_prokaryota.setStyleSheet("color: rgb(0, 4, 38);\n" "background-color:white;")
                 self.checkBox_prokaryota.setChecked(True)
                 self.checkBox_prokaryota.setObjectName("checkBox_prokaryota")
                 self.horizontalLayout_2.addWidget(self.checkBox_prokaryota)
 
 
                 self.checkBox_archaea = QtWidgets.QCheckBox(self.horizontalLayoutWidget_2)
-                self.checkBox_archaea.setStyleSheet("background-color: rgb(255, 255, 255);")
+                self.checkBox_archaea.setStyleSheet("color: rgb(0, 4, 38);\n" "background-color:white;")
                 self.checkBox_archaea.setChecked(True)
                 self.checkBox_archaea.setObjectName("checkBox_archaea")
                 self.horizontalLayout_2.addWidget(self.checkBox_archaea)
@@ -299,6 +320,7 @@ class Ui_MainWindow(object):
                 self.labelinputKingdom.setSizePolicy(sizePolicy)
                 self.labelinputKingdom.setStyleSheet("")
                 self.labelinputKingdom.setObjectName("labelinputKingdom")
+                self.labelinputKingdom.setStyleSheet("color: rgb(255, 255, 255);")
                 self.container_input_kingdom.addWidget(self.labelinputKingdom)
                 self.inputKingdom = QtWidgets.QTextEdit(self.horizontalLayoutWidget_2)
                 sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -322,35 +344,34 @@ class Ui_MainWindow(object):
                 sizePolicy.setVerticalStretch(0)
                 sizePolicy.setHeightForWidth(self.labelRegions.sizePolicy().hasHeightForWidth())
                 self.labelRegions.setSizePolicy(sizePolicy)
-                self.labelRegions.setStyleSheet("\n"
-        "font: 75 18pt \"Futura\";")
                 self.labelRegions.setObjectName("labelRegions")
+                self.labelRegions.setStyleSheet("\n" "font: 75 18pt \"Futura\";""color: rgb(0, 250, 125);")
                 self.inner_menu_container.addWidget(self.labelRegions)
                 self.horizontalLayout_4 = QtWidgets.QHBoxLayout()
                 self.horizontalLayout_4.setSpacing(0)
                 self.horizontalLayout_4.setObjectName("horizontalLayout_4")
                 self.checkBox_rrna = QtWidgets.QCheckBox(self.horizontalLayoutWidget_2)
-                self.checkBox_rrna.setStyleSheet("background-color: rgb(255, 255, 255);")
+                self.checkBox_rrna.setStyleSheet("color: rgb(0, 4, 38);\n" "background-color:white;")
                 self.checkBox_rrna.setChecked(True)
                 self.checkBox_rrna.setObjectName("checkBox_rrna")
                 self.horizontalLayout_4.addWidget(self.checkBox_rrna)
                 self.checkBox_cds = QtWidgets.QCheckBox(self.horizontalLayoutWidget_2)
-                self.checkBox_cds.setStyleSheet("background-color: rgb(255, 255, 255);")
+                self.checkBox_cds.setStyleSheet("color: rgb(0, 4, 38);\n" "background-color:white;")
                 self.checkBox_cds.setChecked(True)
                 self.checkBox_cds.setObjectName("checkBox_cds")
                 self.horizontalLayout_4.addWidget(self.checkBox_cds)
                 self.checkBox_trna = QtWidgets.QCheckBox(self.horizontalLayoutWidget_2)
-                self.checkBox_trna.setStyleSheet("background-color: rgb(255, 255, 255);")
+                self.checkBox_trna.setStyleSheet("color: rgb(0, 4, 38);\n" "background-color:white;")
                 self.checkBox_trna.setChecked(True)
                 self.checkBox_trna.setObjectName("checkBox_trna")
                 self.horizontalLayout_4.addWidget(self.checkBox_trna)
                 self.checkBox_centromere = QtWidgets.QCheckBox(self.horizontalLayoutWidget_2)
-                self.checkBox_centromere.setStyleSheet("background-color: rgb(255, 255, 255);")
+                self.checkBox_centromere.setStyleSheet("color: rgb(0, 4, 38);\n" "background-color:white;")
                 self.checkBox_centromere.setChecked(True)
                 self.checkBox_centromere.setObjectName("checkBox_centromere")
                 self.horizontalLayout_4.addWidget(self.checkBox_centromere)
                 self.checkBox_telomere = QtWidgets.QCheckBox(self.horizontalLayoutWidget_2)
-                self.checkBox_telomere.setStyleSheet("background-color: rgb(255, 255, 255);")
+                self.checkBox_telomere.setStyleSheet("color: rgb(0, 4, 38);\n" "background-color:white;")
                 self.checkBox_telomere.setChecked(True)
                 self.checkBox_telomere.setObjectName("checkBox_telomere")
                 self.horizontalLayout_4.addWidget(self.checkBox_telomere)
@@ -359,27 +380,27 @@ class Ui_MainWindow(object):
                 self.horizontalLayout_5.setSpacing(0)
                 self.horizontalLayout_5.setObjectName("horizontalLayout_5")
                 self.checkBox_3utr = QtWidgets.QCheckBox(self.horizontalLayoutWidget_2)
-                self.checkBox_3utr.setStyleSheet("background-color: rgb(255, 255, 255);")
+                self.checkBox_3utr.setStyleSheet("color: rgb(0, 4, 38);\n" "background-color:white;")
                 self.checkBox_3utr.setChecked(True)
                 self.checkBox_3utr.setObjectName("checkBox_3utr")
                 self.horizontalLayout_5.addWidget(self.checkBox_3utr)
                 self.checkBox_5utr = QtWidgets.QCheckBox(self.horizontalLayoutWidget_2)
-                self.checkBox_5utr.setStyleSheet("background-color: rgb(255, 255, 255);")
+                self.checkBox_5utr.setStyleSheet("color: rgb(0, 4, 38);\n" "background-color:white;")
                 self.checkBox_5utr.setChecked(True)
                 self.checkBox_5utr.setObjectName("checkBox_5utr")
                 self.horizontalLayout_5.addWidget(self.checkBox_5utr)
                 self.checkBox_mobile_element = QtWidgets.QCheckBox(self.horizontalLayoutWidget_2)
-                self.checkBox_mobile_element.setStyleSheet("background-color: rgb(255, 255, 255);")
+                self.checkBox_mobile_element.setStyleSheet("color: rgb(0, 4, 38);\n" "background-color:white;")
                 self.checkBox_mobile_element.setChecked(True)
                 self.checkBox_mobile_element.setObjectName("checkBox_mobile_element")
                 self.horizontalLayout_5.addWidget(self.checkBox_mobile_element)
                 self.checkBox_mobile_ncrna = QtWidgets.QCheckBox(self.horizontalLayoutWidget_2)
-                self.checkBox_mobile_ncrna.setStyleSheet("background-color: rgb(255, 255, 255);")
+                self.checkBox_mobile_ncrna.setStyleSheet("color: rgb(0, 4, 38);\n" "background-color:white;")
                 self.checkBox_mobile_ncrna.setChecked(True)
                 self.checkBox_mobile_ncrna.setObjectName("checkBox_mobile_ncrna")
                 self.horizontalLayout_5.addWidget(self.checkBox_mobile_ncrna)
                 self.checkBox_mobile_intron = QtWidgets.QCheckBox(self.horizontalLayoutWidget_2)
-                self.checkBox_mobile_intron.setStyleSheet("background-color: rgb(255, 255, 255);")
+                self.checkBox_mobile_intron.setStyleSheet("color: rgb(0, 4, 38);\n" "background-color:white;")
                 self.checkBox_mobile_intron.setChecked(True)
                 self.checkBox_mobile_intron.setObjectName("checkBox_mobile_intron")
                 self.horizontalLayout_5.addWidget(self.checkBox_mobile_intron)
@@ -396,6 +417,7 @@ class Ui_MainWindow(object):
                 self.label_inputRegion.setSizePolicy(sizePolicy)
                 self.label_inputRegion.setStyleSheet("")
                 self.label_inputRegion.setObjectName("label_inputRegion")
+                self.label_inputRegion.setStyleSheet("color: rgb(255, 255, 255);")
                 self.container_input_region.addWidget(self.label_inputRegion)
                 self.inputRegion = QtWidgets.QTextEdit(self.horizontalLayoutWidget_2)
                 sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -427,27 +449,32 @@ class Ui_MainWindow(object):
                 sizePolicy.setHeightForWidth(self.labelLog.sizePolicy().hasHeightForWidth())
                 self.labelLog.setSizePolicy(sizePolicy)
                 self.labelLog.setMinimumSize(QtCore.QSize(0, 0))
-                self.labelLog.setStyleSheet("\n"
-        "font: 75 20pt \"Futura\";\n"
-        "")
-                self.labelLog.setAlignment(QtCore.Qt.AlignCenter)
+                self.labelLog.setStyleSheet("\n" "font: 75 20pt \"Futura\";\n" " color: rgb(255, 255, 255);")
+                self.labelLog.setContentsMargins(50, 0, 0, 0)
                 self.labelLog.setObjectName("labelLog")
                 self.right_container.addWidget(self.labelLog)
                 self.container_log = QtWidgets.QHBoxLayout()
                 self.container_log.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
                 self.container_log.setObjectName("container_log")
+                self.container_log.setContentsMargins(50, 0, 0, 0)
+
+                self.labelLog.setSizePolicy(sizePolicy)
+                self.labelLog.setStyleSheet("font: 75 25pt \"Futura\";\n" "color:rgb(255, 255, 255);")
+                self.labelLog.setAlignment(QtCore.Qt.AlignCenter)
+                self.labelLog.setObjectName("container_log")
 
                 self.logOutput = QtWidgets.QTextEdit()
                 self.logOutput.setReadOnly(True)
                 self.logOutput.setLineWrapMode(QtWidgets.QTextEdit.NoWrap)
+                
                 font = self.logOutput.font()
                 font.setFamily("Courier")
-                font.setPointSize(10)
+                font.setPointSize(11)
                 self.logOutput.moveCursor(QtGui.QTextCursor.End)
                 self.logOutput.setCurrentFont(font)
                 sb = self.logOutput.verticalScrollBar()
                 sb.setValue(sb.maximum())
-                
+                self.logOutput.setStyleSheet("background-color: rgb(0, 4, 38);\n" "color: rgb(0, 250, 125);")
                 self.container_log.addWidget(self.logOutput)
                 
 
@@ -460,25 +487,28 @@ class Ui_MainWindow(object):
                 self.container.setStretch(0, 2)
                 self.container.setStretch(1, 3)
                 self.graphicsView = QtWidgets.QGraphicsView(self.centralwidget)
-                self.graphicsView.setGeometry(QtCore.QRect(20, 110, 451, 641))
-                self.graphicsView.setStyleSheet("background-color: rgb(220, 230, 255);")
+                self.graphicsView.setGeometry(QtCore.QRect(0, -0, 501, 881)) #0, -100, 1171, 881
+                self.graphicsView.setStyleSheet("background-color: rgb(0, 0, 28);")
                 self.graphicsView.setObjectName("graphicsView")
                 self.horizontalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
-                self.horizontalLayoutWidget.setGeometry(QtCore.QRect(410, 0, 361, 91))
+                self.horizontalLayoutWidget.setGeometry(QtCore.QRect(550, 0, 561, 100))
                 self.horizontalLayoutWidget.setObjectName("horizontalLayoutWidget")
                 self.title_container = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget)
                 self.title_container.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
-                self.title_container.setContentsMargins(20, 10, 20, 10)
+                self.title_container.setContentsMargins(0, 10, -100, 0)
                 self.title_container.setSpacing(0)
                 self.title_container.setObjectName("title_container")
                 self.mainTitle = QtWidgets.QLabel(self.horizontalLayoutWidget)
+                pixmap = QPixmap('./images/genome.png')
+                self.mainTitle.setPixmap(pixmap)
+                self.mainTitle.resize(pixmap.width(), pixmap.height())
+
                 sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
                 sizePolicy.setHorizontalStretch(0)
                 sizePolicy.setVerticalStretch(0)
                 sizePolicy.setHeightForWidth(self.mainTitle.sizePolicy().hasHeightForWidth())
                 self.mainTitle.setSizePolicy(sizePolicy)
-                self.mainTitle.setStyleSheet("font: 40pt \"Futura\";\n"
-        "color: rgb(166, 92, 0);")
+                self.mainTitle.setStyleSheet("font: 35pt \"Futura\";\n" "color: rgb(0, 250, 125);")
                 self.mainTitle.setAlignment(QtCore.Qt.AlignCenter)
                 self.mainTitle.setObjectName("mainTitle")
                 self.title_container.addWidget(self.mainTitle)
@@ -655,7 +685,7 @@ class Ui_MainWindow(object):
                 self.checkBox_mobile_ncrna.setText(_translate("MainWindow", "ncRna"))
                 self.checkBox_mobile_intron.setText(_translate("MainWindow", "Intron"))
                 self.label_inputRegion.setText(_translate("MainWindow", "Personnalisé:"))
-                self.labelLog.setText(_translate("MainWindow", "Log"))
+                self.labelLog.setText(_translate("MainWindow", "Info"))
                 self.mainTitle.setText(_translate("MainWindow", "GENBANK"))
                 self.menuParametres.setTitle(_translate("MainWindow", "Paramètres"))
                 self.menuChoixKingdoms.setTitle(_translate("MainWindow", "Choix des Kingdoms"))
@@ -680,8 +710,11 @@ class Ui_MainWindow(object):
                 self.actionReprendre.setText(_translate("MainWindow", "Reprendre"))
                 self.actionRedemarrer.setText(_translate("MainWindow", "Redémarrer"))
 
-        def connect_ui(self):
-                start = partial(genbank.Genbank.start, self)
-                self.buttonStart.clicked.connect(lambda x : start())
-                self.buttonStop.clicked.connect(genbank.Genbank.pause)
-                self.buttonReset.clicked.connect(genbank.Genbank.reset)
+        def connect_ui(self, genbank):
+                print("connecting")
+                self.buttonStart.clicked.connect(genbank.worker)
+
+                #self.buttonStart.clicked.connect(genbank.Genbank.worker)
+                self.buttonStop.clicked.connect(genbank.pause)
+                self.buttonReset.clicked.connect(genbank.reset)
+                

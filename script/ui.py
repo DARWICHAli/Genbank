@@ -1,5 +1,5 @@
+from tkinter.tix import INCREASING
 import PyQt5
-import qtawesome as qta
 from PyQt5 import QtCore, QtGui, QtQuickWidgets, QtWidgets
 from PyQt5.QtWidgets import QFileSystemModel
 from PyQt5.QtCore import QStringListModel
@@ -25,7 +25,7 @@ class Ui_MainWindow(object):
 
 
                 icon = QtGui.QIcon()
-                icon.addPixmap(QtGui.QPixmap("./images/genome.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+                icon.addPixmap(QtGui.QPixmap("../images/genome.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
                 MainWindow.setWindowIcon(icon)
 
 
@@ -168,6 +168,7 @@ class Ui_MainWindow(object):
                 self.treeView.setObjectName("treeView")
                 self.treeView.setAnimated(False)
                 self.treeView.setSortingEnabled(True)
+                self.treeView.sortByColumn(0, QtCore.Qt.AscendingOrder)
                 self.treeView.hideColumn(1)
                 self.treeView.hideColumn(2)
                 self.treeView.hideColumn(3)
@@ -175,7 +176,6 @@ class Ui_MainWindow(object):
                 self.treeView.setColumnWidth(0, 200)
                 self.treeView.setWindowTitle("Results")
                 self.treeView.setStyleSheet("color: rgb(255,255,255);\n" "background-color: rgb(0, 4, 28);")
-
                 self.layout_for_tree.addWidget(self.treeView)
                 self.left_container.addLayout(self.layout_for_tree)
 
@@ -271,11 +271,11 @@ class Ui_MainWindow(object):
                 self.horizontalLayout_2.addWidget(self.checkBox_bacteria)
 
 
-                self.checkBox_prokaryota = QtWidgets.QCheckBox(self.horizontalLayoutWidget_2)
-                self.checkBox_prokaryota.setStyleSheet("color: rgb(0, 4, 38);\n" "background-color:white;")
-                self.checkBox_prokaryota.setChecked(True)
-                self.checkBox_prokaryota.setObjectName("checkBox_prokaryota")
-                self.horizontalLayout_2.addWidget(self.checkBox_prokaryota)
+                self.checkBox_viruses = QtWidgets.QCheckBox(self.horizontalLayoutWidget_2)
+                self.checkBox_viruses.setStyleSheet("color: rgb(0, 4, 38);\n" "background-color:white;")
+                self.checkBox_viruses.setChecked(True)
+                self.checkBox_viruses.setObjectName("checkBox_viruses")
+                self.horizontalLayout_2.addWidget(self.checkBox_viruses)
 
 
                 self.checkBox_archaea = QtWidgets.QCheckBox(self.horizontalLayoutWidget_2)
@@ -478,7 +478,7 @@ class Ui_MainWindow(object):
                 self.title_container.setSpacing(0)
                 self.title_container.setObjectName("title_container")
                 self.mainTitle = QtWidgets.QLabel(self.horizontalLayoutWidget)
-                pixmap = QPixmap('./images/genome.png')
+                pixmap = QPixmap('../images/genome.png')
                 self.mainTitle.setPixmap(pixmap)
                 self.mainTitle.resize(pixmap.width(), pixmap.height())
 
@@ -588,10 +588,10 @@ class Ui_MainWindow(object):
                 self.actionmobile_element.setChecked(True)
                 self.actionmobile_element.setObjectName("actionmobile_element")
               
-                self.actionProkaryota = QtWidgets.QAction(MainWindow)
-                self.actionProkaryota.setCheckable(True)
-                self.actionProkaryota.setChecked(True)
-                self.actionProkaryota.setObjectName("actionProkaryota")
+                self.actionViruses = QtWidgets.QAction(MainWindow)
+                self.actionViruses.setCheckable(True)
+                self.actionViruses.setChecked(True)
+                self.actionViruses.setObjectName("actionViruses")
 
                 self.actionStart = QtWidgets.QAction(MainWindow)
                 self.actionStart.setObjectName("actionStart")
@@ -608,7 +608,7 @@ class Ui_MainWindow(object):
                 self.menuChoixKingdoms.addAction(self.actionEucaryota)
                 self.menuChoixKingdoms.addAction(self.actionBacteria)
                 self.menuChoixKingdoms.addAction(self.actionArchaea)
-                self.menuChoixKingdoms.addAction(self.actionProkaryota)
+                self.menuChoixKingdoms.addAction(self.actionViruses)
                
                 self.menuChoixRegions.addAction(self.actionrNA)
                 self.menuChoixRegions.addAction(self.actionCDS)
@@ -649,7 +649,7 @@ class Ui_MainWindow(object):
                 self.labelKingdoms.setText(_translate("MainWindow", "Choix des Kingdoms:"))
                 self.checkBox_eukaryota.setText(_translate("MainWindow", "Eukaryota"))
                 self.checkBox_bacteria.setText(_translate("MainWindow", "Bacteria"))
-                self.checkBox_prokaryota.setText(_translate("MainWindow", "Prokaryota"))
+                self.checkBox_viruses.setText(_translate("MainWindow", "Viruses"))
                 self.checkBox_archaea.setText(_translate("MainWindow", "Archaea"))
                 self.labelinputKingdom.setText(_translate("MainWindow", "Personnalisé:"))
                 self.labelRegions.setText(_translate("MainWindow", "Choix des régions fonctionnelles:"))
@@ -683,7 +683,7 @@ class Ui_MainWindow(object):
                 self.action5_UTR.setText(_translate("MainWindow", "5\'UTR"))
                 self.actiontRNA.setText(_translate("MainWindow", "tRNA"))
                 self.actionmobile_element.setText(_translate("MainWindow", "mobile element"))
-                self.actionProkaryota.setText(_translate("MainWindow", "Prokaryota"))
+                self.actionViruses.setText(_translate("MainWindow", "Viruses"))
                 self.actionStart.setText(_translate("MainWindow", "Démarrer"))
                 self.actionStop.setText(_translate("MainWindow", "Stop"))
                 self.actionReprendre.setText(_translate("MainWindow", "Reprendre"))

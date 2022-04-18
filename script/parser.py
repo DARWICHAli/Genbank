@@ -22,7 +22,7 @@ class Parser:
 
         organism = handle_read.annotations['organism']
         features = handle_read.features
-        #regions = ["CDS", "centromere", "intron", "mobile_element", "ncRNA", "rRNA", "telomere", "tRNA", "3'UTR", "5'UTR"]
+
         visited_regions = [False for i in range(len(region_choice))]
 
         bornes_expr = re.compile(r"[1-9][0-9]*")
@@ -44,6 +44,11 @@ class Parser:
                     try: os.remove(filename)
                     except: pass
                 
+                
+
+                # TO DO: check last modification date
+
+
                 result = open(filename, "a")
                 visited_regions[index] = True
                 

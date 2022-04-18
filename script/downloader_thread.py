@@ -14,8 +14,7 @@ import asyncio
 save_pickle = False
 DEBUG = False
 VERBOSE = False
-kingdoms_choice = []
-regions_choice = []
+
 
 class ThreadClass(QtCore.QThread):
 	
@@ -30,10 +29,12 @@ class ThreadClass(QtCore.QThread):
 		super(ThreadClass, self).__init__(parent)
 		self.index = index
 		self.parent = parent
-		self.region_choice = []
+		self.regions_choice = []
+		self.kingdoms_choice = []
 		parent.region_signal.connect(self.get_region_choice)
-		self.organism_df = 0
+		parent.kingdom_signal.connect(self.get_kingdom_choice)
 		self.isRunning = False
+		self.organism_df = 0
 
 ################################################################################
 ################################################################################
@@ -45,6 +46,7 @@ class ThreadClass(QtCore.QThread):
 
 		start_time = time.time()
 
+		
 		self.load_tree()
 		
 		msg = "Download overview and IDS time : "
@@ -60,13 +62,13 @@ class ThreadClass(QtCore.QThread):
 		# About 157421 files to parse in total, we test with the first 10
 		for (index, names, path, NC_LIST) in self.organism_df.itertuples():
 			for NC in NC_LIST:
-				
+
 				if(nb_parsed==10): break
 
 				msg = "Parsing " + str(NC) + '...\n In: ' + str(path)
 				self.any_signal.emit(msg)
 				print(msg)
-				if(Parser.parse_NC(NC, path, self.region_choice) == False):
+				if(Parser.parse_NC(NC, path, self.regions_choice) == False):
 					msg = "Erreur Parsing " + str(NC) + ". Fichier supprimé."
 				else:
 					msg = "Parsing de " + str(NC) + " réussis."
@@ -84,14 +86,20 @@ class ThreadClass(QtCore.QThread):
 ################################################################################
 ################################################################################
 
-	def get_region_choice(self, region_choice):
-		self.region_choice = []
+	def get_region_choice(self, regions_choice):
 		index = self.sender().index
 		if(index == 0):
-			self.region_choice = region_choice
-			print(self.region_choice)
+			self.regions_choice = regions_choice
+			print(self.regions_choice)
 
-	
+
+	def get_kingdom_choice(self, kingdoms_choice):
+		self.get_kingdom_choice = []
+		index = self.sender().index
+		if(index == 0):
+			self.kingdoms_choice = kingdoms_choice
+			print(self.kingdoms_choice)
+
 ################################################################################
 ################################################################################
 
@@ -115,8 +123,10 @@ class ThreadClass(QtCore.QThread):
 
 				# Extraction of the tree components
 				try :
-					organism = parsed_row[0].replace(' ','_').replace('/','_')
 					kingdom = parsed_row[1].replace(' ','_').replace('/','_')
+					if(kingdom not in self.kingdoms_choice): 
+						continue
+					organism = parsed_row[0].replace(' ','_').replace('/','_')
 					group = parsed_row[2].replace(' ','_').replace('/','_')
 					subgroup = parsed_row[3].replace(' ','_').replace('/','_')
 					path = '../Results/' + kingdom +'/' + group +'/' + subgroup +'/' + organism + '/' 
@@ -229,7 +239,7 @@ class ThreadClass(QtCore.QThread):
 
 		self.dataframe_result.emit(organism_df)
 
-		return organism_df
+		self.organism_df = organism_df
 
 
 
@@ -239,6 +249,7 @@ class ThreadClass(QtCore.QThread):
 
 	def stop(self):
 		self.parent.region_signal.disconnect(self.get_region_choice)
+		self.parent.kingdom_signal.disconnect()
 		self.isRunning = False
 		print("Stopping thread...",self.index)
 		msg = "Stopping thread..." + str(self.index)
@@ -252,7 +263,14 @@ class ThreadClass(QtCore.QThread):
 
 
 	def load_tree(self):
-		files = ["Bacteria.ids", "Eukaryota.ids", "Archaea.ids", "Viruses.ids"]
+		#files = ["Bacteria.ids", "Eukaryota.ids", "Archaea.ids", "Viruses.ids"]
+		
+		for f in self.kingdoms_choice:
+			if not os.path.isfile("../GENOME_REPORTS/IDS/" + f + '.ids'):
+				self.download_ftp()
+				self.download_files()
+				self.load_df_from_pickle()
+				return
 
 		if os.path.isdir("../pickle") and os.path.isfile("../pickle/organism_df"):
 			# Initialization
@@ -264,8 +282,8 @@ class ThreadClass(QtCore.QThread):
 			last_local_change = 1e50
 
 			# ftp files last modification timestamp
-			for f in files:
-				remote_datetime = ftp.voidcmd("MDTM " + f)[4:].strip()
+			for f in self.kingdoms_choice:
+				remote_datetime = ftp.voidcmd("MDTM " + f +'.ids')[4:].strip()
 				remote_timestamp = time.mktime(time.strptime(remote_datetime, '%Y%m%d%H%M%S'))
 				if int(remote_timestamp) > int(last_ftp_change):
 					last_ftp_change = remote_timestamp
@@ -279,14 +297,14 @@ class ThreadClass(QtCore.QThread):
 			if int(last_ftp_change) > int(last_local_change):
 				self.download_ftp()
 				self.download_files()
-				#print("loaded from ftp")
-			else:
-				self.organism_df = self.load_df_from_pickle()
-				#print("loaded from pickle")
+			
 		else:
+			print("else")
 			self.download_ftp()
 			self.download_files()
-			#print("loaded from ftp (file or directory doesn't exist)")
+		
+		self.load_df_from_pickle()
+		#print("loaded from ftp (file or directory doesn't exist)")
 
 
 
@@ -307,9 +325,10 @@ class ThreadClass(QtCore.QThread):
 			shutil.remove(os.path.join(directory, "IDS"))
 		os.mkdir(os.path.join(directory, "IDS"))
 
-		files = [("", "overview.txt"), ("IDS", "Bacteria.ids"),
-				("IDS", "Eukaryota.ids"), ("IDS", "Archaea.ids"),
-				("IDS", "Viruses.ids")]
+		files = [("", "overview.txt")]
+
+		for k in self.kingdoms_choice:
+			files.append(("IDS", k + '.ids'))
 
 		# Adding destination
 		files = [(directory,) + f for f in files]

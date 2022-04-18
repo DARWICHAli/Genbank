@@ -156,15 +156,15 @@ class Ui_MainWindow(object):
                 self.layout_for_tree.setObjectName("layout_for_tree")
 
                 self.model = QFileSystemModel()
-                if not os.path.exists('./Results'):
-                        os.mkdir("./Results")
+                if not os.path.exists('../Results'):
+                        os.mkdir("../Results")
                 self.model.setRootPath("")
                 
                 # tree View
                 self.treeView = QtWidgets.QTreeView(self.horizontalLayoutWidget_2)
                 
                 self.treeView.setModel(self.model)
-                self.treeView.setRootIndex(self.model.index("./Results"))
+                self.treeView.setRootIndex(self.model.index("../Results"))
                 self.treeView.setObjectName("treeView")
                 self.treeView.setAnimated(False)
                 self.treeView.setSortingEnabled(True)
@@ -716,8 +716,6 @@ class Ui_MainWindow(object):
         def connect_ui(self, genbank):
                 print("connecting")
                 self.buttonStart.clicked.connect(genbank.worker)
-
-                #self.buttonStart.clicked.connect(genbank.Genbank.worker)
                 self.buttonStop.clicked.connect(genbank.stop_worker)
                 self.buttonReset.clicked.connect(genbank.reset)
                 

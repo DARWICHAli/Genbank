@@ -194,7 +194,7 @@ class Ui_MainWindow(object):
                 # container boutons de contrôle
                 self.buttons_container = QtWidgets.QHBoxLayout()
                 self.buttons_container.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
-                self.buttons_container.setContentsMargins(-1, 10, -1, 10)
+                self.buttons_container.setContentsMargins(100, 10, 100, 10)
                 self.buttons_container.setObjectName("buttons_container")
 
                 # bouton start
@@ -204,33 +204,9 @@ class Ui_MainWindow(object):
                 sizePolicy.setVerticalStretch(0)
                 sizePolicy.setHeightForWidth(self.buttonStart.sizePolicy().hasHeightForWidth())
                 self.buttonStart.setSizePolicy(sizePolicy)
-                self.buttonStart.setStyleSheet("color: rgb(0, 250, 125);\n" "background-color:rgb(0, 4, 38);")
+                self.buttonStart.setStyleSheet("background-color: rgb(0, 250, 125);\n" "color:rgb(0, 4, 38);")
                 self.buttonStart.setObjectName("buttonStart")
                 self.buttons_container.addWidget(self.buttonStart)
-
-                #bouton stop
-                self.buttonStop = QtWidgets.QPushButton(self.horizontalLayoutWidget_2)
-                sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-                sizePolicy.setHorizontalStretch(0)
-                sizePolicy.setVerticalStretch(0)
-                sizePolicy.setHeightForWidth(self.buttonStop.sizePolicy().hasHeightForWidth())
-                self.buttonStop.setSizePolicy(sizePolicy)
-                self.buttonStop.setStyleSheet("color: rgb(0, 250, 125);\n" "background-color:rgb(0, 4, 38);")
-                self.buttonStop.setObjectName("buttonStop")
-                self.buttons_container.addWidget(self.buttonStop)
-
-                # bouton reset
-                self.buttonReset = QtWidgets.QPushButton(self.horizontalLayoutWidget_2)
-                sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-                sizePolicy.setHorizontalStretch(0)
-                sizePolicy.setVerticalStretch(0)
-                sizePolicy.setHeightForWidth(self.buttonReset.sizePolicy().hasHeightForWidth())
-                self.buttonReset.setSizePolicy(sizePolicy)
-                self.buttonReset.setStyleSheet("color: rgb(0, 250, 125);\n" "background-color:rgb(0, 4, 38);")
-                self.buttonReset.setObjectName("buttonReset")
-                self.buttons_container.addWidget(self.buttonReset)
-
-
 
                 # container de gauche (menu et log)
                 self.left_container.addLayout(self.buttons_container)
@@ -667,8 +643,8 @@ class Ui_MainWindow(object):
                 self.labelCree.setText(_translate("MainWindow", "Créé"))
                 self.labelSupprime.setText(_translate("MainWindow", "Supprimé"))
                 self.buttonStart.setText(_translate("MainWindow", "Start"))
-                self.buttonStop.setText(_translate("MainWindow", "Stop"))
-                self.buttonReset.setText(_translate("MainWindow", "Reset"))
+                # self.buttonStop.setText(_translate("MainWindow", "Stop"))
+                #self.buttonReset.setText(_translate("MainWindow", "Reset"))
                 self.labelPreferences.setText(_translate("MainWindow", "Préférences"))
                 self.labelKingdoms.setText(_translate("MainWindow", "Choix des Kingdoms:"))
                 self.checkBox_eukaryota.setText(_translate("MainWindow", "Eukaryota"))
@@ -714,8 +690,5 @@ class Ui_MainWindow(object):
                 self.actionRedemarrer.setText(_translate("MainWindow", "Redémarrer"))
 
         def connect_ui(self, genbank):
-                print("connecting")
                 self.buttonStart.clicked.connect(genbank.worker)
-                self.buttonStop.clicked.connect(genbank.stop_worker)
-                self.buttonReset.clicked.connect(genbank.reset)
-                
+

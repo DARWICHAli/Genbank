@@ -32,7 +32,7 @@ class Parser:
             if f.type in region_choice:
 
                 if cls.error_check(f.location.parts, bornes_expr, handle_read):
-                    break
+                    return False
 
                 header =  f.type + ' ' + organism + ' ' + str(handle_read.id)
                 final_seq = ""
@@ -87,7 +87,7 @@ class Parser:
                 # résultat final pour cette région
                 result.writelines(final_seq+'\n')
                 result.close()
-
+        return True
 
     @classmethod
     def join(cls, header, sequence, location):

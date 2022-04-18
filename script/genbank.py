@@ -12,10 +12,9 @@ from ui import Ui_MainWindow
 from downloader_thread import ThreadClass, kingdoms_choice, regions_choice
 from parser import Parser
 import os
-
+import asyncio
 
 class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
-
 
 
 	region_signal = QtCore.pyqtSignal(list)
@@ -23,7 +22,7 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 	def __init__(self, parent = None, index = 0):
 		super(Genbank, self).__init__(parent)
 		QtWidgets.QMainWindow.__init__(self)
-		self.isRunning = True
+		self.isRunning = False
 		self.index = index
 		self.MainWindow = QtWidgets.QMainWindow()
 		self.mainwindow = Ui_MainWindow()
@@ -104,10 +103,14 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 ################################################################################
 ################################################################################
 
-	def pause(self, str):
+	def end(self, msg):
 		index = self.sender().index
 		if(index == 1):
-			print("pause")
+			self.log(str(msg))
+			self.mainwindow.buttonStart.setText("Start Parsing")
+			self.mainwindow.buttonStart.setStyleSheet("background-color: rgb(0, 250, 125);\n" "color:rgb(0, 4, 38);")
+			self.thread[1].stop()
+			self.isRunning = False
 
 ################################################################################
 ################################################################################
@@ -154,17 +157,29 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 
 
 	def worker(self):
-		self.get_kingdom_choice()
-		self.get_region_choice()
-		self.thread[1] = ThreadClass(parent = self, index=1)
-		self.thread[1].start()
-		self.region_signal.emit(self.region_choice)
-		self.thread[1].any_signal.connect(self.start)
-		self.thread[1].dataframe_result.connect(self.get_result)
-		self.thread[1].progress_signal.connect(self.update_progress_bar)
-		self.thread[1].time_signal.connect(self.start)
 
+		if( self.isRunning == False):
 
-	def stop_worker(self):
-		self.thread[1].stop()
-		self.thread[1].stop_signal.connect(self.pause)
+			self.isRunning = True
+			self.mainwindow.buttonStart.setStyleSheet("background-color: rgb(30, 30, 65);\n" "color:rgb(250, 204, 238);")
+			self.mainwindow.buttonStart.setText("Stop Parsing")
+
+			self.get_kingdom_choice()
+			self.get_region_choice()
+			self.thread[1] = ThreadClass(parent = self, index=1)
+			self.thread[1].start()
+			self.region_signal.emit(self.region_choice)
+			self.thread[1].any_signal.connect(self.start)
+			self.thread[1].dataframe_result.connect(self.get_result)
+			self.thread[1].progress_signal.connect(self.update_progress_bar)
+			self.thread[1].time_signal.connect(self.start)
+			self.thread[1].end_signal.connect(self.end)
+
+		else:
+			self.mainwindow.buttonStart.setText("Start Parsing")
+			self.mainwindow.buttonStart.setStyleSheet("background-color: rgb(0, 250, 125);\n" "color:rgb(0, 4, 38);")
+			self.thread[1].stop()
+			self.isRunning = False
+
+		
+		

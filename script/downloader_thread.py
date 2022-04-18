@@ -9,6 +9,7 @@ import shutil
 from ftplib import FTP
 from ftp_downloader import *
 from parser import Parser
+import asyncio
 
 save_pickle = False
 DEBUG = False
@@ -21,47 +22,67 @@ class ThreadClass(QtCore.QThread):
 	progress_signal = QtCore.pyqtSignal(float)
 	any_signal = QtCore.pyqtSignal(str)
 	dataframe_result = QtCore.pyqtSignal(pd.core.frame.DataFrame)
-	stop_signal = QtCore.pyqtSignal(str)
 	time_signal = QtCore.pyqtSignal(float)
+	end_signal = QtCore.pyqtSignal(str)
 	
 
 	def __init__(self, parent=None, index = 0):
 		super(ThreadClass, self).__init__(parent)
 		self.index = index
 		self.parent = parent
-		self.isRunning = True
 		self.region_choice = []
 		parent.region_signal.connect(self.get_region_choice)
+		self.organism_df = 0
+		self.isRunning = False
 
 ################################################################################
 ################################################################################
 
 
 	def run(self):
-		k=0
+		self.isRunning = True
+		nb_parsed=0
+
 		start_time = time.time()
 
-		self.download_ftp()
-		self.download_files()
-		organism_df = self.load_from_pickle(start_time)
-
+		self.load_tree()
+		
 		msg = "Download overview and IDS time : "
 		self.any_signal.emit(msg)
 		self.time_signal.emit(time.time() - start_time)
 
+		start_time = time.time()
+
 		msg = "Started Parsing files..."
+		print(msg)
 		self.any_signal.emit(msg)
 
-		for (index, names, path, NC_LIST) in organism_df.itertuples():
+		# About 157421 files to parse in total, we test with the first 10
+		for (index, names, path, NC_LIST) in self.organism_df.itertuples():
 			for NC in NC_LIST:
-				msg = "Parsing " + str(NC) + "..."
+				
+				if(nb_parsed==10): break
+
+				msg = "Parsing " + str(NC) + '...\n In: ' + str(path)
 				self.any_signal.emit(msg)
-				if(k>3): break
-				Parser.parse_NC(NC, path, self.region_choice)
-				k+=1
-		
-		msg = "Parsing finished"
+				print(msg)
+				if(Parser.parse_NC(NC, path, self.region_choice) == False):
+					msg = "Erreur Parsing " + str(NC) + ". Fichier supprimé."
+				else:
+					msg = "Parsing de " + str(NC) + " réussis."
+				self.any_signal.emit(msg)
+				print(msg)
+				nb_parsed+=1
+
+		msg = "Parsing finished in: "
 		self.any_signal.emit(msg)
+		print(msg)
+		self.time_signal.emit(time.time() - start_time)
+		print(str(time.time() - start_time))
+		self.end_signal.emit("End")
+
+################################################################################
+################################################################################
 
 	def get_region_choice(self, region_choice):
 		self.region_choice = []
@@ -71,6 +92,8 @@ class ThreadClass(QtCore.QThread):
 			print(self.region_choice)
 
 	
+################################################################################
+################################################################################
 
 	def download_files(self):
 		# Parsing of "overview.txt"
@@ -112,7 +135,6 @@ class ThreadClass(QtCore.QThread):
 		organism_paths_ids = []
 		organism_NC_ids = []
 		i = 0
-
 		for ids in ids_files:
 			i += 1
 
@@ -147,11 +169,12 @@ class ThreadClass(QtCore.QThread):
 						organism_names_ids.append(organism_names[index])
 						organism_paths_ids.append(organism_paths[index])
 						organism_NC_ids.append([parsed_row[1]])
-						name = organism_names[index].replace(" ", "_")
-						name = name.replace("[", "_")
-						name = name.replace("]", "_")
-						name = name.replace(":", "_")
-						path = organism_paths[index] + name + "/"
+						# name = organism_names[index].replace(" ", "_")
+						# name = name.replace("[", "_")
+						# name = name.replace("]", "_")
+						# name = name.replace(":", "_")
+						path = organism_paths[index] 
+						
 						if not os.path.exists(path):
 							os.makedirs(path)
 
@@ -176,7 +199,7 @@ class ThreadClass(QtCore.QThread):
 ################################################################################
 
 
-	def load_from_pickle(self, start_time):
+	def load_df_from_pickle(self):
 
 		msg = "Loading dataframe from pickle..."
 		print(msg)
@@ -196,7 +219,7 @@ class ThreadClass(QtCore.QThread):
 			name = name.replace("[", "_")
 			name = name.replace("]", "_")
 			name = name.replace(":", "_")
-			path = organism_df["path"][i] + name + "/"
+			path = organism_df["path"][i] + "/"
 			if not os.path.exists(path):
 				os.makedirs(path)
 
@@ -205,8 +228,6 @@ class ThreadClass(QtCore.QThread):
 		self.any_signal.emit(msg)
 
 		self.dataframe_result.emit(organism_df)
-
-		
 
 		return organism_df
 
@@ -217,41 +238,56 @@ class ThreadClass(QtCore.QThread):
 
 
 	def stop(self):
+		self.parent.region_signal.disconnect(self.get_region_choice)
 		self.isRunning = False
 		print("Stopping thread...",self.index)
+		msg = "Stopping thread..." + str(self.index)
+		self.any_signal.emit(msg)
 		self.terminate()
-		msg = "Stopping thread..."
-		self.stop_signal.emit(msg)
-
+		
+	
 
 ########################################################################################################################
 ########################################################################################################################
 
 
-	# def download_ftp_file(self, arg):
+	def load_tree(self):
+		files = ["Bacteria.ids", "Eukaryota.ids", "Archaea.ids", "Viruses.ids"]
 
-	# 	msg = "Start Fetch"
-	# 	print(msg)
-	# 	self.any_signal.emit(msg) 
+		if os.path.isdir("../pickle") and os.path.isfile("../pickle/organism_df"):
+			# Initialization
+			ftp = ftplib.FTP("ftp.ncbi.nlm.nih.gov")
+			ftp.login()
+			ftp.cwd('genomes/GENOME_REPORTS/IDS')
 
-	# 	dst, dir, file = arg
-	# 	GENOME_PATH = "genomes/GENOME_REPORTS"
+			last_ftp_change = 0
+			last_local_change = 1e50
 
-	# 	msg = "Logging in to FTP server"
-	# 	print(msg)
-	# 	self.any_signal.emit(msg)
+			# ftp files last modification timestamp
+			for f in files:
+				remote_datetime = ftp.voidcmd("MDTM " + f)[4:].strip()
+				remote_timestamp = time.mktime(time.strptime(remote_datetime, '%Y%m%d%H%M%S'))
+				if int(remote_timestamp) > int(last_ftp_change):
+					last_ftp_change = remote_timestamp
+			#print(last_ftp_change)
 
-	# 	ftp = ftplib.FTP("ftp.ncbi.nlm.nih.gov")
-	# 	ftp.login()
+			# local files timestamp
+			last_local_change = os.path.getmtime("../pickle/organism_df")
+			#print(last_local_change)
 
+			# Download the newest files and create the tree
+			if int(last_ftp_change) > int(last_local_change):
+				self.download_ftp()
+				self.download_files()
+				#print("loaded from ftp")
+			else:
+				self.organism_df = self.load_df_from_pickle()
+				#print("loaded from pickle")
+		else:
+			self.download_ftp()
+			self.download_files()
+			#print("loaded from ftp (file or directory doesn't exist)")
 
-	# 	if len(dir):
-	# 		ftp.cwd(GENOME_PATH + "/" + dir)
-	# 	else:
-	# 		ftp.cwd(GENOME_PATH)
-
-	# 	with open(os.path.join(dst, dir, file), "wb") as f:
-	# 		ftp.retrbinary(f"RETR {file}", f.write)
 
 
 ########################################################################################################################

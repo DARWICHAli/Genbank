@@ -1,7 +1,6 @@
-from Bio import Entrez
+from Bio import *
 import pandas as pd
 import os
-from Bio import SeqIO
 import pickle
 import random
 import string
@@ -29,7 +28,6 @@ def reset_tree():
     organism_names = []
     organism_paths = []
 
-    os.chdir('../script')
     with open('../GENOME_REPORTS/overview.txt') as f:
         first_row = True
         count_rows = 1
@@ -135,13 +133,56 @@ def load_df_from_pickle():
     return organism_df
 
 ################################################################################
+
+def load_tree():
+    files = ["Bacteria.ids", "Eukaryota.ids", "Archaea.ids", "Viruses.ids"]
+
+    if os.path.isdir("../pickle") and os.path.isfile("../pickle/organism_df"):
+        # Initialization
+        ftp = ftplib.FTP("ftp.ncbi.nlm.nih.gov")
+        ftp.login()
+        ftp.cwd('genomes/GENOME_REPORTS/IDS')
+
+        last_ftp_change = 0
+        last_local_change = 1e50
+
+        # ftp files last modification timestamp
+        for f in files:
+            remote_datetime = ftp.voidcmd("MDTM " + f)[4:].strip()
+            remote_timestamp = time.mktime(time.strptime(remote_datetime, '%Y%m%d%H%M%S'))
+            if int(remote_timestamp) > int(last_ftp_change):
+                last_ftp_change = remote_timestamp
+        #print(last_ftp_change)
+
+        # local files timestamp
+        last_local_change = os.path.getmtime("../pickle/organism_df")
+        #print(last_local_change)
+
+        # Download the newest files and create the tree
+        if int(last_ftp_change) > int(last_local_change):
+            reset_tree()
+            #print("loaded from ftp")
+        else:
+            load_df_from_pickle()
+            #print("loaded from pickle")
+    else:
+        reset_tree()
+        #print("loaded from ftp (file or directory doesn't exist)")
+
+
+################################################################################
 ################################################################################
 
 def main() :
     start_time = time.time()
-    reset_tree()
-    print("Arborescence DONE !")
+
+    load_tree()
+
+    #for (index, name, path, NC_list) in organism_df.itertuples():
+    #    print(NC_list)
+
     print("--- %s seconds ---" % (time.time() - start_time))
+
 
 if __name__ == "__main__":
     main()

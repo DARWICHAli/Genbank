@@ -28,9 +28,10 @@ class ParserClass:
         bornes_expr = re.compile(r"[1-9][0-9]*")
 
         for f in features:
-            # si cette région a été selectionnée par l'utilisateut
+            # si cette région a été selectionnée par l'utilisateur
             if f.type in region_choice:
 
+                # To Do: faire un continue à la région suivante au lieu de tout enlever
                 if cls.error_check(f.location.parts, bornes_expr, handle_read):
                     return False
 

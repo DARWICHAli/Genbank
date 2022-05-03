@@ -60,7 +60,7 @@ class ThreadClass(QtCore.QThread):
 		self.any_signal.emit(msg)
 
 		# About 157421 files to parse in total, we test with the first 10
-		for (index, names, path, NC_LIST) in self.organism_df.itertuples():
+		for (index, path, NC_LIST) in self.organism_df.itertuples():
 			for NC in NC_LIST:
 
 				if(nb_parsed==10): break
@@ -128,13 +128,16 @@ class ThreadClass(QtCore.QThread):
 					# we only want the kingdoms that were selected by the user
 					if(kingdom not in self.kingdoms_choice): 
 						continue
-					organism = parsed_row[0].replace(' ','_').replace('/','_').replace('[','_')
+					organism = parsed_row[0].replace(' ','_').replace('/','_').replace('[','').replace(']','').replace(':','_').replace('\'','')
 					group = parsed_row[2].replace(' ','_').replace('/','_')
 					subgroup = parsed_row[3].replace(' ','_').replace('/','_')
-					path = '../Results/' + kingdom +'/' + group +'/' + subgroup +'/' + organism + '/' 
-					# this will be used for ?????
+
+					# organism_names is used only for comparing with the organisms names we find later in the IDS files
+					# to get the right index in dataframe
 					organism_names.append(parsed_row[0])
-					organism_paths.append(path)
+
+					organism_paths.append('../Results/' + kingdom +'/' + group +'/' + subgroup +'/' + organism)
+
 				except IndexError : pass
 
 		# Parsing of the IDS
@@ -144,9 +147,10 @@ class ThreadClass(QtCore.QThread):
 		msg = "Overview Done. Parsing IDS to store in pickle dataframe..."
 		print(msg)
 		self.any_signal.emit(msg) 
-		organism_names_ids = [] # we will store the organisms names here
-		organism_paths_ids = []	# we will store the organisms paths here
-		organism_NC_ids = []	# we will store the NC to parse here
+
+		#organism_names_ids = [] # we will store the organisms names here
+		organism_paths_dataframe = []	# we will store the organisms paths here
+		organism_NC_dataframe = []	# we will store the NC to parse here
 		i = 0
 
 		# looping through the kingdoms ids files (viruses.ids, archaea.ids, etc ..)
@@ -157,8 +161,7 @@ class ThreadClass(QtCore.QThread):
 			self.progress_signal.emit(1)
 			self.any_signal.emit(msg)
 			with open('../GENOME_REPORTS/IDS/' + ids) as f:
-				n_line = sum(1 for _ in f)
-			with open('../GENOME_REPORTS/IDS/' + ids) as f:
+				#n_line = sum(1 for _ in f)
 				if VERBOSE:
 					print("ids")
 				for row in f:
@@ -167,38 +170,44 @@ class ThreadClass(QtCore.QThread):
 					if (parsed_row[1][0:2] != 'NC'): # We need only the NC
 						continue
 					try:
+						# we need the index in the previous array that we built from overview
+						# so that we can put the NC and path in the same index in our dataframe
 						index = organism_names.index(parsed_row[5])
 					except ValueError:
+						# Organism does not exist in overview, we move to next NC
+						
+						#continue
 						parsed_name = parsed_row[5].split(' ')[::-1]
 						try_name = parsed_row[5]
+						found = False
 						for word in parsed_name :
 							try_name = try_name.replace(' '+word, '')
 							try:
 								index = organism_names.index(try_name)
+								found = True
 								break
-							except : pass
+							except : 
+								found = False
+								#pass
+						if (not found):
+							print("Organism " + str(parsed_row[5]) + " does not exist in overview")
 
 					try:
-						organism_NC_ids[organism_names_ids.index(organism_names[index])].append(parsed_row[1])
+						# checking if we have already added this organism to the array
+						# If so, we simply add another NC
+						organism_NC_dataframe[organism_paths_dataframe.index(organism_paths[index])].append(parsed_row[1])
 					except ValueError:
-						organism_names_ids.append(organism_names[index])
-						organism_paths_ids.append(organism_paths[index])
-						organism_NC_ids.append([parsed_row[1]])
-						name = organism_names[index].replace(" ", "_")
-						name = name.replace("[", "_")
-						name = name.replace("]", "_")
-						name = name.replace(":", "_")
-						path = organism_paths[index] + name + "/"
+						# We encouter this organism for the first time, we add it to the array with the NC
+						#organism_names_ids.append(organism_names[index])
+						organism_paths_dataframe.append(organism_paths[index])
+						organism_NC_dataframe.append([parsed_row[1]])
 						
-						if not os.path.exists(path):
-							#print("MKDIR: " + path)
-							os.makedirs(path)
 
 		# Store the organisms in pandas DataFrame
 		organism_df = pd.DataFrame({
-					"name":organism_names_ids,
-					"path":organism_paths_ids,
-					"NC":organism_NC_ids})
+					#"name":organism_names_ids,
+					"path":organism_paths_dataframe,
+					"NC":organism_NC_dataframe})
 
 		# Create a pickle file to save the dataframe in local
 		if not os.path.exists("../pickle"):
@@ -227,15 +236,17 @@ class ThreadClass(QtCore.QThread):
 			self.any_signal.emit(msg) 
 			return
 
+		msg = "Creating hierarchy..."
+		print(msg)
+		self.any_signal.emit(msg)
 		for i in range(len(organism_df)):
-			name = organism_df["name"][i].replace(" ", "_")
-			name = name.replace("[", "_")
-			name = name.replace("]", "_")
-			name = name.replace(":", "_")
-			path = organism_df["path"][i] + "/"
-			if not os.path.exists(path):
-				print("MKDIR: " + path)
-				os.makedirs(path)
+			# name = organism_df["name"][i].replace(" ", "_")
+			# name = name.replace("[", "_")
+			# name = name.replace("]", "_")
+			# name = name.replace(":", "_")
+			# path = organism_df["path"][i] + name + "/"
+			if not os.path.exists(organism_df["path"][i]):
+				os.makedirs(organism_df["path"][i])
 
 		msg = "Finished loading hierarchy"
 		print(msg)
@@ -319,7 +330,10 @@ class ThreadClass(QtCore.QThread):
 		except: 
 			print("exception in download_ftp(): rmtree  ../GENOME_REPORTS failed.")
 
-		os.mkdir("../GENOME_REPORTS")
+		try:
+			os.mkdir("../GENOME_REPORTS")
+		except: pass
+		
 		os.chdir('../GENOME_REPORTS')
 
 		directory = os.getcwd()

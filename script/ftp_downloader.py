@@ -24,11 +24,16 @@ def download_ftp_file(arg):
     ftp = ftplib.FTP("ftp.ncbi.nlm.nih.gov")
     ftp.login()
 
-
+    # IDs
     if len(dir):
         ftp.cwd(GENOME_PATH + "/" + dir)
+    # Overview
     else:
         ftp.cwd(GENOME_PATH)
 
     with open(os.path.join(dst, dir, file), "wb") as f:
-        ftp.retrbinary(f"RETR {file}", f.write)
+        # for debug
+        try:
+            ftp.retrbinary(f"RETR {file}", f.write)
+        except:
+            print("ERROR: Could not copy file " + file + " from ftp server")

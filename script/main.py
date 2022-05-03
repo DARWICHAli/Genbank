@@ -11,4 +11,6 @@ def main():
     GenBank.MainWindow.show()
     sys.exit(app.exec_())
  
-asyncio.run(main())
+if __name__ == "__main__":
+    main()
+

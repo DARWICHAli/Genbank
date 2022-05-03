@@ -8,7 +8,7 @@ import pickle
 import shutil
 from ftplib import FTP
 from ftp_downloader import *
-from parser import Parser
+from parser_class import ParserClass
 import asyncio
 
 save_pickle = False
@@ -68,7 +68,7 @@ class ThreadClass(QtCore.QThread):
 				msg = "Parsing " + str(NC) + '...\n In: ' + str(path)
 				self.any_signal.emit(msg)
 				print(msg)
-				if(Parser.parse_NC(NC, path, self.regions_choice) == False):
+				if(ParserClass.parse_NC(NC, path, self.regions_choice) == False):
 					msg = "Erreur Parsing " + str(NC) + ". Fichier supprimé."
 				else:
 					msg = "Parsing de " + str(NC) + " réussis."
@@ -90,7 +90,7 @@ class ThreadClass(QtCore.QThread):
 		index = self.sender().index
 		if(index == 0):
 			self.regions_choice = regions_choice
-			print(self.regions_choice)
+			#print(self.regions_choice)
 
 
 	def get_kingdom_choice(self, kingdoms_choice):
@@ -98,7 +98,7 @@ class ThreadClass(QtCore.QThread):
 		index = self.sender().index
 		if(index == 0):
 			self.kingdoms_choice = kingdoms_choice
-			print(self.kingdoms_choice)
+			#print(self.kingdoms_choice)
 
 ################################################################################
 ################################################################################
@@ -108,8 +108,9 @@ class ThreadClass(QtCore.QThread):
 		organism_names = []
 		organism_paths = []
 
-		#os.chdir('../script')
+		# Retrieving the information from overview.txt to build the tree
 		with open('../GENOME_REPORTS/overview.txt') as f:
+			# we drop the header
 			first_row = True
 			count_rows = 1
 			for row in f:
@@ -124,12 +125,14 @@ class ThreadClass(QtCore.QThread):
 				# Extraction of the tree components
 				try :
 					kingdom = parsed_row[1].replace(' ','_').replace('/','_')
+					# we only want the kingdoms that were selected by the user
 					if(kingdom not in self.kingdoms_choice): 
 						continue
-					organism = parsed_row[0].replace(' ','_').replace('/','_')
+					organism = parsed_row[0].replace(' ','_').replace('/','_').replace('[','_')
 					group = parsed_row[2].replace(' ','_').replace('/','_')
 					subgroup = parsed_row[3].replace(' ','_').replace('/','_')
 					path = '../Results/' + kingdom +'/' + group +'/' + subgroup +'/' + organism + '/' 
+					# this will be used for ?????
 					organism_names.append(parsed_row[0])
 					organism_paths.append(path)
 				except IndexError : pass
@@ -138,17 +141,19 @@ class ThreadClass(QtCore.QThread):
 		ids_files = os.listdir('../GENOME_REPORTS/IDS/')
 		if VERBOSE:
 			print('overview done !')
-		msg = "Overview Done. Retrieving IDS..."
+		msg = "Overview Done. Parsing IDS to store in pickle dataframe..."
 		print(msg)
 		self.any_signal.emit(msg) 
-		organism_names_ids = []
-		organism_paths_ids = []
-		organism_NC_ids = []
+		organism_names_ids = [] # we will store the organisms names here
+		organism_paths_ids = []	# we will store the organisms paths here
+		organism_NC_ids = []	# we will store the NC to parse here
 		i = 0
+
+		# looping through the kingdoms ids files (viruses.ids, archaea.ids, etc ..)
 		for ids in ids_files:
 			i += 1
 
-			msg = "Retrieving " + str(ids) + "..."
+			msg = "Parsing " + str(ids) + "..."
 			self.progress_signal.emit(1)
 			self.any_signal.emit(msg)
 			with open('../GENOME_REPORTS/IDS/' + ids) as f:
@@ -179,13 +184,14 @@ class ThreadClass(QtCore.QThread):
 						organism_names_ids.append(organism_names[index])
 						organism_paths_ids.append(organism_paths[index])
 						organism_NC_ids.append([parsed_row[1]])
-						# name = organism_names[index].replace(" ", "_")
-						# name = name.replace("[", "_")
-						# name = name.replace("]", "_")
-						# name = name.replace(":", "_")
-						path = organism_paths[index] 
+						name = organism_names[index].replace(" ", "_")
+						name = name.replace("[", "_")
+						name = name.replace("]", "_")
+						name = name.replace(":", "_")
+						path = organism_paths[index] + name + "/"
 						
 						if not os.path.exists(path):
+							#print("MKDIR: " + path)
 							os.makedirs(path)
 
 		# Store the organisms in pandas DataFrame
@@ -199,10 +205,7 @@ class ThreadClass(QtCore.QThread):
 			os.makedirs("../pickle")
 		with open("../pickle/organism_df", 'wb') as f:
 			pickle.dump(organism_df, f)
-		
-		msg = "Loading data from pickle..."
-		print(msg)
-		self.any_signal.emit(msg) 
+	
 
 	
 ################################################################################
@@ -231,6 +234,7 @@ class ThreadClass(QtCore.QThread):
 			name = name.replace(":", "_")
 			path = organism_df["path"][i] + "/"
 			if not os.path.exists(path):
+				print("MKDIR: " + path)
 				os.makedirs(path)
 
 		msg = "Finished loading hierarchy"
@@ -263,8 +267,8 @@ class ThreadClass(QtCore.QThread):
 
 
 	def load_tree(self):
-		#files = ["Bacteria.ids", "Eukaryota.ids", "Archaea.ids", "Viruses.ids"]
-		
+
+		# TO DO: Add a to download array containing only the kingdoms to update instead of updating everything again
 		for f in self.kingdoms_choice:
 			if not os.path.isfile("../GENOME_REPORTS/IDS/" + f + '.ids'):
 				self.download_ftp()
@@ -287,11 +291,9 @@ class ThreadClass(QtCore.QThread):
 				remote_timestamp = time.mktime(time.strptime(remote_datetime, '%Y%m%d%H%M%S'))
 				if int(remote_timestamp) > int(last_ftp_change):
 					last_ftp_change = remote_timestamp
-			#print(last_ftp_change)
 
 			# local files timestamp
 			last_local_change = os.path.getmtime("../pickle/organism_df")
-			#print(last_local_change)
 
 			# Download the newest files and create the tree
 			if int(last_ftp_change) > int(last_local_change):
@@ -299,7 +301,6 @@ class ThreadClass(QtCore.QThread):
 				self.download_files()
 			
 		else:
-			print("else")
 			self.download_ftp()
 			self.download_files()
 		
@@ -315,12 +316,15 @@ class ThreadClass(QtCore.QThread):
 	def download_ftp(self):
 
 		try: shutil.rmtree('../GENOME_REPORTS') # remove all files/subdirectories
-		except: pass
+		except: 
+			print("exception in download_ftp(): rmtree  ../GENOME_REPORTS failed.")
+
 		os.mkdir("../GENOME_REPORTS")
 		os.chdir('../GENOME_REPORTS')
 
 		directory = os.getcwd()
 
+		# Pourquoi ce test ? IDS n'a pas été supprimé en supprimant GENOME_REPORTS ?
 		if os.path.exists(os.path.join(directory, "IDS")):
 			shutil.remove(os.path.join(directory, "IDS"))
 		os.mkdir(os.path.join(directory, "IDS"))
@@ -336,6 +340,6 @@ class ThreadClass(QtCore.QThread):
 		msg = "Downloading files..."
 		print(msg)
 		self.any_signal.emit(msg)
-
+		print(files)
 		with Pool(5) as p:
 			p.map(download_ftp_file, files)

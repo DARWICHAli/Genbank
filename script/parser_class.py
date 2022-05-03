@@ -9,7 +9,7 @@ import os
 import glob
 import re # compiling the pattern for alphanumeric 
 
-class Parser:
+class ParserClass:
 
 
     @classmethod

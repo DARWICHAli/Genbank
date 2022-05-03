@@ -10,7 +10,7 @@ from PyQt5 import QtWidgets, QtCore
 from pip import main
 from ui import Ui_MainWindow
 from downloader_thread import ThreadClass
-from parser import Parser
+from parser_class import ParserClass
 import os
 import asyncio
 
@@ -29,7 +29,7 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 		self.mainwindow.setupUi(self.MainWindow)
 		self.thread={}
 		self.mainwindow.connect_ui(self)
-		self.parser = Parser()
+		self.parser = ParserClass()
 		self.region_choice = []
 		self.kingdom_choice = []
 		
@@ -48,7 +48,7 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 			selected_kingdoms = selected_kingdoms + ["Bacteria"]
 		if(self.mainwindow.checkBox_eukaryota.isChecked()):
 			selected_kingdoms = selected_kingdoms + ["Eukaryota"]
-		if(self.mainwindow.inputKingdom.toPlainText() != ""):
+		if(len(self.mainwindow.inputKingdom.toPlainText())):
 			selected_kingdoms = selected_kingdoms + [self.mainwindow.inputKingdom.toPlainText()]
 
 		self.kingdom_choice = selected_kingdoms
@@ -81,7 +81,7 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 			selected_regions = selected_regions + ["ncRNA"]
 		if(self.mainwindow.checkBox_mobile_intron.isChecked()):
 			selected_regions = selected_regions + ["intron"]
-		if(self.mainwindow.inputRegion.toPlainText() != ""):
+		if(len(self.mainwindow.inputRegion.toPlainText())):
 			selected_regions = selected_regions + [self.mainwindow.inputRegion.toPlainText()]
 
 		self.region_choice = selected_regions

@@ -14,6 +14,10 @@ from parser_class import ParserClass
 import os
 import asyncio
 
+
+################################################################################
+################################################################################
+
 class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 
 	region_signal = QtCore.pyqtSignal(list)
@@ -34,8 +38,6 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 		self.kingdom_choice = []
 		self.mutex = QtCore.QMutex()
 
-		
-		
 
 ################################################################################
 ################################################################################

@@ -4,10 +4,12 @@ import string
 import os
 from Bio import SeqIO
 from Bio.SeqFeature import FeatureLocation
-
+from datetime import datetime, timedelta, date
+import time
 import os
-import glob
 import re # compiling the pattern for alphanumeric 
+import glob
+
 
 class ParserClass:
 
@@ -16,9 +18,18 @@ class ParserClass:
     def parse_NC(cls, NC, path, region_choice):
         
         Entrez.email = ''.join(random.choice(string.ascii_lowercase) for i in range(20)) + '@random.com'
-
         handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gbwithparts", retmode="text")
         handle_read = SeqIO.read(handle, "gb")
+        handle_date = handle_read.annotations['date']
+
+        try:
+            # ce NC existe déjà dans le repertoire de l'organisme ?
+            paths = glob.glob(r''+path+'/*')
+            # fichier déjà parsé et bdd non modifié ?
+            if cls.verify_modification_date(paths[0], handle_date):
+                return
+
+        except: pass
 
         organism = handle_read.annotations['organism']
         organism = organism.replace(' ','_').replace('/','_')
@@ -33,7 +44,7 @@ class ParserClass:
             # si cette région a été selectionnée par l'utilisateur
             if f.type in region_choice:
 
-                # To Do: faire un continue à la région suivante au lieu de tout enlever
+                # Mauvaise séquence, next feature
                 if cls.error_check(f.location.parts, bornes_expr, handle_read):
                     continue
                 
@@ -47,9 +58,6 @@ class ParserClass:
                     try: os.remove(filename)
                     except: pass
                 
-
-                # TO DO: check last modification date
-
 
                 result = open(filename, "a")
                 visited_regions[index] = True
@@ -82,14 +90,12 @@ class ParserClass:
                         fc = FeatureLocation(f.location.start, f.location.end+1)
                         final_seq = header + '\n' + fc.extract(handle_read.seq)
 
-                    # todo: supprimer les fichiers créés
-                    else:
-                        print("error")
-                        break
+                    # next feature
+                    else: continue
                 
                 # mauvais strand
                 elif f.location.strand == 0:
-                    os.remove(filename)
+                    continue
 
                 # résultat final pour cette région
                 result.writelines(final_seq+'\n')
@@ -130,9 +136,16 @@ class ParserClass:
     def error_check(cls, location_parts, bornes_expr, handle_read):
         for l in location_parts:
             if l.start > l.end or re.fullmatch(bornes_expr, str(l.start)) is None or re.fullmatch(bornes_expr, str(l.end)) is None:
-                filespath = glob.glob("*_{}.txt".format(handle_read.id))
-                for file in filespath:
-                    try: os.remove(file)
-                    except: print("cant remove file")
                 return True
+        return False
+
+    @classmethod
+    def verify_modification_date(path, handle_date):
+        file_date = os.path.getmtime(path)
+        file_date = time.strftime('%Y%m%d', time.localtime(file_date))
+        handle_date = datetime.strptime(handle_date, "%d-%b-%Y")
+        handle_date =  str(handle_date).split(' ')[0].replace('-','')
+        # fichier déjà parsé et non modifié:
+        if int(file_date) >= int(handle_date):
+            return True
         return False

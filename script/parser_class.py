@@ -21,8 +21,7 @@ class ParserClass:
             signal.emit("Error : sequence borders must be less or equal than total sequence size")
             print("Error : sequence borders must be less or equal than total sequence size")
             return True
-        #elif str(f.location.start)[0] == '<' or str(f.location.end)[0] == '>'\
-        #        or str(f.location.start)[0] == '>' or str(f.location.end)[0] == '<':
+
         try:
             int(str(f.location.start))
             int(str(f.location.end))
@@ -36,20 +35,33 @@ class ParserClass:
     def parse_NC(cls, NC, path, region_choice, signal):
         Entrez.email = ''.join(random.choice(string.ascii_lowercase) for i in range(20)) + '@random.com'
         handle = Entrez.efetch(db="nucleotide", id="NC_015063", rettype="gbwithparts", retmode="text")
-        # with open("input.gb", "w") as f:
-        #    f.write(handle.read())
-        #    f.close()
+
 
         with warnings.catch_warnings(record=True) as w:
             handle_read = SeqIO.read(handle, "gb")
-            #handle_read = SeqIO.read("test_input.gb", "gb")
             if w:
                 for warning in w:
                     signal.emit(warning.message)
                     print(warning.message)
+        
+
+        # Checking last modification date
+        handle_date = handle_read.annotations['date']
+        try:
+            # ce NC existe déjà dans le repertoire de l'organisme ?
+            paths = glob.glob(r''+path+'/*')
+            # fichier déjà parsé et bdd non modifié ?
+            if cls.verify_modification_date(paths[0], handle_date):
+                signal.emit( str(NC) + " est encore à jour. NC suivant...")
+                print(str(NC) + " est encore à jour. NC suivant...")
+                return
+        except: pass
+
 
         organism = handle_read.annotations['organism']
         features = handle_read.features
+        ogranism_str = organism.replace(' ', '_').replace('/', '_')
+        ogranism_str = ogranism_str.replace('[', '').replace(']', '').replace(':', '_').replace('\'', '')
 
         # delete 'intron' from regions beceause it's not actually a region but just a parsing option
         regions = ["CDS", "centromere", "mobile_element", "ncRNA", "rRNA", "telomere", "tRNA", "3'UTR", "5'UTR"]
@@ -90,8 +102,6 @@ class ParserClass:
                     final_seq = ""
                     header = f.type + ' ' + organism + ' ' + str(handle_read.id)
 
-                    ogranism_str = organism.replace(' ', '_').replace('/', '_')
-                    ogranism_str = ogranism_str.replace('[', '').replace(']', '').replace(':', '_').replace('\'', '')
                     if f.type == "CDS":
                         if intron_is_selected:
                             intron_filename = path + "/intron_{}_{}.txt".format(ogranism_str, handle_read.id)

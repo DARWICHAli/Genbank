@@ -19,6 +19,7 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 		self.mainwindow = Ui_MainWindow()
 		self.mainwindow.setupUi(self.MainWindow)
 		self.thread={}
+		self.mutex = QtCore.QMutex()
 		self.mainwindow.connect_ui(self)
 		self.parser = ParserClass()
 		self.region_choice = []
@@ -141,9 +142,11 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 
 	# Logger
 	def log(self, str):
+		self.mutex.lock()
 		self.mainwindow.logOutput.insertPlainText(str + '\n')
 		sb =self.mainwindow.logOutput.verticalScrollBar()
 		sb.setValue(sb.maximum())
+		self.mutex.unlock()
 		
 	def update_progress_bar(self, value):
 		index = self.sender().index

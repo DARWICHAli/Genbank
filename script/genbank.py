@@ -107,6 +107,7 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 		self.mainwindow.buttonStart.setEnabled(True)
 		self.mainwindow.buttonStart.setText("Stop Parsing")
 		self.mainwindow.buttonStart.setStyleSheet("background-color: rgb(100, 20, 15);\n" "color:rgb(255, 255, 255);")
+		
 
 ################################################################################
 ################################################################################
@@ -119,6 +120,22 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 			self.mainwindow.buttonStart.setStyleSheet("background-color: rgb(0, 250, 125);\n" "color:rgb(0, 4, 38);")
 			self.thread[1].stop()
 			self.isRunning = False
+			self.mainwindow.inputKingdom.setEnabled(True)
+			self.mainwindow.inputRegion.setEnabled(True)
+			self.mainwindow.checkBox_archaea.setEnabled(True)
+			self.mainwindow.checkBox_bacteria.setEnabled(True)
+			self.mainwindow.checkBox_eukaryota.setEnabled(True)
+			self.mainwindow.checkBox_viruses.setEnabled(True)
+			self.mainwindow.checkBox_archaea.setEnabled(True)
+			self.mainwindow.checkBox_cds.setEnabled(True)
+			self.mainwindow.checkBox_centromere.setEnabled(True)
+			self.mainwindow.checkBox_mobile_element.setEnabled(True)
+			self.mainwindow.checkBox_mobile_intron.setEnabled(True)
+			self.mainwindow.checkBox_rrna.setEnabled(True)
+			self.mainwindow.checkBox_trna.setEnabled(True)
+			self.mainwindow.checkBox_3utr.setEnabled(True)
+			self.mainwindow.checkBox_5utr.setEnabled(True)
+			self.mainwindow.checkBox_telomere.setEnabled(True)
 
 ################################################################################
 ################################################################################
@@ -182,6 +199,22 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 			self.mainwindow.buttonStart.setStyleSheet("background-color: rgb(30, 30, 65);\n" "color:rgb(250, 204, 238);")
 			self.mainwindow.buttonStart.setText("Téléchargement...")
 			self.mainwindow.buttonStart.setEnabled(False)
+			self.mainwindow.inputKingdom.setEnabled(False)
+			self.mainwindow.inputRegion.setEnabled(False)
+			self.mainwindow.checkBox_archaea.setEnabled(False)
+			self.mainwindow.checkBox_bacteria.setEnabled(False)
+			self.mainwindow.checkBox_eukaryota.setEnabled(False)
+			self.mainwindow.checkBox_viruses.setEnabled(False)
+			self.mainwindow.checkBox_archaea.setEnabled(False)
+			self.mainwindow.checkBox_cds.setEnabled(False)
+			self.mainwindow.checkBox_centromere.setEnabled(False)
+			self.mainwindow.checkBox_mobile_element.setEnabled(False)
+			self.mainwindow.checkBox_mobile_intron.setEnabled(False)
+			self.mainwindow.checkBox_rrna.setEnabled(False)
+			self.mainwindow.checkBox_trna.setEnabled(False)
+			self.mainwindow.checkBox_3utr.setEnabled(False)
+			self.mainwindow.checkBox_5utr.setEnabled(False)
+			self.mainwindow.checkBox_telomere.setEnabled(False)
 
 			self.thread[1] = ThreadClass(parent = self, index=1)
 			self.thread[1].start()

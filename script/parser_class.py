@@ -47,7 +47,6 @@ class ParserClass:
                     try: os.remove(filename)
                     except: pass
                 
-                
 
                 # TO DO: check last modification date
 

@@ -152,7 +152,8 @@ class ThreadClass(QtCore.QThread):
 		organism_paths_dataframe = []	# we will store the organisms paths here
 		organism_NC_dataframe = []	# we will store the NC to parse here
 		i = 0
-
+		found = 0
+		not_found = 0
 		# looping through the kingdoms ids files (viruses.ids, archaea.ids, etc ..)
 		for ids in ids_files:
 			i += 1
@@ -173,24 +174,22 @@ class ThreadClass(QtCore.QThread):
 						# we need the index in the previous array that we built from overview
 						# so that we can put the NC and path in the same index in our dataframe
 						index = organism_names.index(parsed_row[5])
+						found += 1
 					except ValueError:
 						# Organism does not exist in overview, we move to next NC
-						
+						found = False
 						#continue
 						parsed_name = parsed_row[5].split(' ')[::-1]
 						try_name = parsed_row[5]
-						found = False
 						for word in parsed_name :
 							try_name = try_name.replace(' '+word, '')
 							try:
 								index = organism_names.index(try_name)
 								found = True
 								break
-							except : 
+							except: 
 								found = False
-								#pass
-						if (not found):
-							print("Organism " + str(parsed_row[5]) + " does not exist in overview")
+						if not found: continue
 
 					try:
 						# checking if we have already added this organism to the array
@@ -199,10 +198,13 @@ class ThreadClass(QtCore.QThread):
 					except ValueError:
 						# We encouter this organism for the first time, we add it to the array with the NC
 						#organism_names_ids.append(organism_names[index])
-						organism_paths_dataframe.append(organism_paths[index])
-						organism_NC_dataframe.append([parsed_row[1]])
-						
-
+						try:
+							organism_paths_dataframe.append(organism_paths[index])
+							organism_NC_dataframe.append([parsed_row[1]])
+						except: pass
+					
+		print("found: " + str(found))
+		print("not found " + str(not_found))
 		# Store the organisms in pandas DataFrame
 		organism_df = pd.DataFrame({
 					#"name":organism_names_ids,

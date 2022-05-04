@@ -36,4 +36,8 @@ def download_ftp_file(arg):
         try:
             ftp.retrbinary(f"RETR {file}", f.write)
         except:
-            print("ERROR: Could not copy file " + file + " from ftp server")
+            try:
+                ftp.retrbinary(f"RETR {file}", f.write())
+            except:    
+                print("ERROR: Could not copy file " + file + " from ftp server")
+        f.close()

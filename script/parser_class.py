@@ -33,7 +33,7 @@ class ParserClass:
 
                 # To Do: faire un continue à la région suivante au lieu de tout enlever
                 if cls.error_check(f.location.parts, bornes_expr, handle_read):
-                    return False
+                    continue
 
                 header =  f.type + ' ' + organism + ' ' + str(handle_read.id)
                 final_seq = ""

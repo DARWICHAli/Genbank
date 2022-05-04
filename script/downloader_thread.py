@@ -14,7 +14,7 @@ VERBOSE = False
 class ThreadClass(QtCore.QThread):
 	
 	progress_signal = QtCore.pyqtSignal(float)
-	any_signal = QtCore.pyqtSignal(str)
+	log_signal = QtCore.pyqtSignal(str)
 	dataframe_result = QtCore.pyqtSignal(pd.core.frame.DataFrame)
 	time_signal = QtCore.pyqtSignal(float)
 	end_signal = QtCore.pyqtSignal(str)
@@ -30,6 +30,8 @@ class ThreadClass(QtCore.QThread):
 		parent.kingdom_signal.connect(self.get_kingdom_choice)
 		self.isRunning = False
 		self.organism_df = 0
+		self.nb_NC = 0
+		self.nb_parsed = 0
 
 ################################################################################
 ################################################################################
@@ -40,43 +42,43 @@ class ThreadClass(QtCore.QThread):
 		nb_parsed=0
 
 		start_time = time.time()
-
 		
 		self.load_tree()
 		
-		msg = "Download overview and IDS time : "
-		self.any_signal.emit(msg)
+		msg = "Overview and IDs downloaded in "
+		self.log_signal.emit(msg)
 		self.time_signal.emit(time.time() - start_time)
 
 		start_time = time.time()
 
-		msg = "Started Parsing files..."
+		msg = "Parsing Started..."
 		print(msg)
-		self.any_signal.emit(msg)
+		self.log_signal.emit(msg)
 
+		to_parse = 100
+		total = sum(len(n) for n in self.organism_df['NC'])
+		self.nb_NC = to_parse
+		self.nb_parsed = 0
 		# About 157421 files to parse in total, we test with the first 10
 		for (index, path, NC_LIST) in self.organism_df.itertuples():
 			for NC in NC_LIST:
-
-				if(nb_parsed==10): break
+				if(not path.split('/')[2] in self.kingdoms_choice): continue
+				if(nb_parsed==to_parse): break
 
 				msg = "Parsing " + str(NC) + '...\n In: ' + str(path)
-				self.any_signal.emit(msg)
+				self.log_signal.emit(msg)
 				print(msg)
-				if(ParserClass.parse_NC(NC, path, self.regions_choice, self.any_signal) == False):
-					msg = "Erreur Parsing " + str(NC) + ". Fichier supprimé."
-				else:
-					msg = "Parsing de " + str(NC) + " réussis."
-				self.any_signal.emit(msg)
-				print(msg)
+				ParserClass.parse_NC(NC, path, self.regions_choice, self.log_signal)
+
 				nb_parsed+=1
+				self.progress_signal.emit((self.nb_parsed/self.nb_NC)*100)
 
 		msg = "Parsing finished in: "
-		self.any_signal.emit(msg)
+		self.log_signal.emit(msg)
 		print(msg)
 		self.time_signal.emit(time.time() - start_time)
 		print(str(time.time() - start_time))
-		self.end_signal.emit("End")
+		self.end_signal.emit("----------- End -----------")
 
 ################################################################################
 ################################################################################
@@ -85,7 +87,6 @@ class ThreadClass(QtCore.QThread):
 		index = self.sender().index
 		if(index == 0):
 			self.regions_choice = regions_choice
-			#print(self.regions_choice)
 
 
 	def get_kingdom_choice(self, kingdoms_choice):
@@ -93,7 +94,6 @@ class ThreadClass(QtCore.QThread):
 		index = self.sender().index
 		if(index == 0):
 			self.kingdoms_choice = kingdoms_choice
-			#print(self.kingdoms_choice)
 
 ################################################################################
 ################################################################################
@@ -141,7 +141,7 @@ class ThreadClass(QtCore.QThread):
 			print('overview done !')
 		msg = "Overview Done. Parsing IDS to store in pickle dataframe..."
 		print(msg)
-		self.any_signal.emit(msg) 
+		self.log_signal.emit(msg) 
 
 		#organism_names_ids = [] # we will store the organisms names here
 		organism_paths_dataframe = []	# we will store the organisms paths here
@@ -155,7 +155,7 @@ class ThreadClass(QtCore.QThread):
 
 			msg = "Parsing " + str(ids) + "..."
 			self.progress_signal.emit(1)
-			self.any_signal.emit(msg)
+			self.log_signal.emit(msg)
 			with open('../GENOME_REPORTS/IDS/' + ids) as f:
 				#n_line = sum(1 for _ in f)
 				if VERBOSE:
@@ -222,7 +222,7 @@ class ThreadClass(QtCore.QThread):
 
 		msg = "Loading dataframe from pickle..."
 		print(msg)
-		self.any_signal.emit(msg)
+		self.log_signal.emit(msg)
 
 		try:
 			with open("../pickle/organism_df", 'rb') as f:
@@ -230,12 +230,12 @@ class ThreadClass(QtCore.QThread):
 		except IOError:
 			msg = "pickle file not accessible"
 			print(msg)
-			self.any_signal.emit(msg) 
+			self.log_signal.emit(msg) 
 			return
 
 		msg = "Creating hierarchy..."
 		print(msg)
-		self.any_signal.emit(msg)
+		self.log_signal.emit(msg)
 		for i in range(len(organism_df)):
 			# name = organism_df["name"][i].replace(" ", "_")
 			# name = name.replace("[", "_")
@@ -247,7 +247,7 @@ class ThreadClass(QtCore.QThread):
 
 		msg = "Finished loading hierarchy"
 		print(msg)
-		self.any_signal.emit(msg)
+		self.log_signal.emit(msg)
 
 		self.dataframe_result.emit(organism_df)
 
@@ -265,7 +265,7 @@ class ThreadClass(QtCore.QThread):
 		self.isRunning = False
 		print("Stopping thread...",self.index)
 		msg = "Stopping thread..." + str(self.index)
-		self.any_signal.emit(msg)
+		self.log_signal.emit(msg)
 		self.terminate()
 		
 	
@@ -350,7 +350,7 @@ class ThreadClass(QtCore.QThread):
 
 		msg = "Downloading files..."
 		print(msg)
-		self.any_signal.emit(msg)
+		self.log_signal.emit(msg)
 		print(files)
 		with Pool(5) as p:
 			p.map(download_ftp_file, files)

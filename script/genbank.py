@@ -174,13 +174,13 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 			self.thread[1].start()
 			self.region_signal.emit(self.region_choice)
 			self.kingdom_signal.emit(self.kingdom_choice)
-			self.thread[1].any_signal.connect(self.start)
+			self.thread[1].log_signal.connect(self.start)
 			self.thread[1].dataframe_result.connect(self.get_result)
 			self.thread[1].progress_signal.connect(self.update_progress_bar)
 			self.thread[1].time_signal.connect(self.start)
 			self.thread[1].end_signal.connect(self.end)
 			self.mainwindow.logOutput.clear()
-			self.mainwindow.logOutput.insertPlainText('Parsing Started\n')
+			self.mainwindow.logOutput.insertPlainText('Program Started\n')
 
 		else:
 			self.mainwindow.buttonStart.setText("Start Parsing")
@@ -188,6 +188,6 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 			self.thread[1].stop()
 			self.isRunning = False
 			self.mainwindow.logOutput.clear()
-			self.mainwindow.logOutput.insertPlainText('Parsing stopped\n')
+			self.mainwindow.logOutput.insertPlainText('Program stopped\n')
 		
 		

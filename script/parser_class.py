@@ -66,13 +66,14 @@ class ParserClass:
         # delete 'intron' from regions beceause it's not actually a region but just a parsing option
         regions = ["CDS", "centromere", "mobile_element", "ncRNA", "rRNA", "telomere", "tRNA", "3'UTR", "5'UTR"]
         try: 
+
             file_regions = handle_read.annotations['structured_comment']['Genome-Annotation-Data']['Features Annotated'].split("; ")
         except:
             file_regions = regions
             pass
         visited_regions = [False, False, False, False, False, False, False, False, False, False]
 
-        options = ["intron"]
+        options = region_choice
         selected_regions = []
         intron_is_selected = False
         cds_is_selected = False
@@ -88,6 +89,7 @@ class ParserClass:
             else:
                 signal.emit('Error : invalid selected option \'{}\''.format(option))
                 print('Error : invalid selected option \'{}\''.format(option))
+                return
 
         count_complements = 0
         nb_introns = 0
@@ -218,9 +220,11 @@ class ParserClass:
                     elif final_seq:
                         result.writelines(final_seq + '\n')
                         result.close()
-        if(nb_introns == 0):
+        if(nb_introns == 0 and intron_is_selected):
             os.remove(intron_file.name)
         print("number of introns found: {}".format(nb_introns))
+        signal.emit("Parsing of {} done successfully.".format(NC))
+        signal.emit("Stored in:  {}".format(path))
         return True
 
     @classmethod

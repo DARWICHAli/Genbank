@@ -1,9 +1,11 @@
 from PyQt5 import QtCore
 import time
+import shutil
 import pandas as pd
 import os.path
+from multiprocessing import Pool
 import pickle
-from ftp_downloader import ftplib
+from ftp_downloader import *
 from parser_class import ParserClass
 
 save_pickle = False

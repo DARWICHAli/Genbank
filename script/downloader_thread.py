@@ -35,6 +35,7 @@ class ThreadClass(QtCore.QThread):
 		parent.kingdom_signal.connect(self.get_kingdom_choice)
 		self.isRunning = False
 		self.organism_df = 0
+		self.nb_NC = 0
 
 ################################################################################
 ################################################################################
@@ -50,6 +51,7 @@ class ThreadClass(QtCore.QThread):
 		self.load_tree()
 		
 		msg = "Download overview and IDS time : "
+
 		self.any_signal.emit(msg)
 		self.time_signal.emit(time.time() - start_time)
 
@@ -59,12 +61,17 @@ class ThreadClass(QtCore.QThread):
 		print(msg)
 		self.any_signal.emit(msg)
 
+		self.nb_NC = sum( len(n) for n in self.organism_df["NC"] )
+		print(self.nb_NC)
 		# About 157421 files to parse in total, we test with the first 10
+		self.nb_NC=100 
 		for (index, path, NC_LIST) in self.organism_df.itertuples():
-			for NC in NC_LIST:
+			# We only parse kingdoms selected by user
+			kingdom = path.split('/')[2]
+			if(kingdom not in self.kingdoms_choice): continue
 
-				if(nb_parsed==10): break
-
+			for NC in NC_LIST:	
+				if(nb_parsed==50): break
 				msg = "Parsing " + str(NC) + '...\n In: ' + str(path)
 				self.any_signal.emit(msg)
 				print(msg)
@@ -75,6 +82,7 @@ class ThreadClass(QtCore.QThread):
 				self.any_signal.emit(msg)
 				print(msg)
 				nb_parsed+=1
+				self.progress_signal.emit(100./self.nb_NC)
 
 		msg = "Parsing finished in: "
 		self.any_signal.emit(msg)
@@ -90,7 +98,6 @@ class ThreadClass(QtCore.QThread):
 		index = self.sender().index
 		if(index == 0):
 			self.regions_choice = regions_choice
-			#print(self.regions_choice)
 
 
 	def get_kingdom_choice(self, kingdoms_choice):
@@ -98,7 +105,6 @@ class ThreadClass(QtCore.QThread):
 		index = self.sender().index
 		if(index == 0):
 			self.kingdoms_choice = kingdoms_choice
-			#print(self.kingdoms_choice)
 
 ################################################################################
 ################################################################################
@@ -128,7 +134,8 @@ class ThreadClass(QtCore.QThread):
 					# we only want the kingdoms that were selected by the user
 					if(kingdom not in self.kingdoms_choice): 
 						continue
-					organism = parsed_row[0].replace(' ','_').replace('/','_').replace('[','').replace(']','').replace(':','_').replace('\'','')
+					organism = parsed_row[0].replace(' ','_').replace('/','_')
+					organism = organism.replace('[','').replace(']','').replace(':','_').replace('\'','')
 					group = parsed_row[2].replace(' ','_').replace('/','_')
 					subgroup = parsed_row[3].replace(' ','_').replace('/','_')
 
@@ -159,7 +166,6 @@ class ThreadClass(QtCore.QThread):
 			i += 1
 
 			msg = "Parsing " + str(ids) + "..."
-			self.progress_signal.emit(1)
 			self.any_signal.emit(msg)
 			with open('../GENOME_REPORTS/IDS/' + ids) as f:
 				#n_line = sum(1 for _ in f)
@@ -195,12 +201,14 @@ class ThreadClass(QtCore.QThread):
 						# checking if we have already added this organism to the array
 						# If so, we simply add another NC
 						organism_NC_dataframe[organism_paths_dataframe.index(organism_paths[index])].append(parsed_row[1])
+						self.nb_NC += 1
 					except ValueError:
 						# We encouter this organism for the first time, we add it to the array with the NC
 						#organism_names_ids.append(organism_names[index])
 						try:
 							organism_paths_dataframe.append(organism_paths[index])
 							organism_NC_dataframe.append([parsed_row[1]])
+							self.nb_NC += 1
 						except: pass
 					
 		print("found: " + str(found))

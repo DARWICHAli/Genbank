@@ -32,6 +32,8 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 		self.parser = ParserClass()
 		self.region_choice = []
 		self.kingdom_choice = []
+		self.mutex = QtCore.QMutex()
+
 		
 		
 
@@ -39,6 +41,7 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 ################################################################################
 
 	def get_kingdom_choice(self):
+		self.mutex.lock()
 		selected_kingdoms = []
 		if(self.mainwindow.checkBox_viruses.isChecked()):
 			selected_kingdoms = selected_kingdoms + ["Viruses"]
@@ -52,7 +55,7 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 			selected_kingdoms = selected_kingdoms + [self.mainwindow.inputKingdom.toPlainText()]
 
 		self.kingdom_choice = selected_kingdoms
-
+		self.mutex.unlock()
 
 
 ################################################################################
@@ -60,6 +63,7 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 
 
 	def get_region_choice(self):
+		self.mutex.lock()
 		selected_regions = []
 		if(self.mainwindow.checkBox_rrna.isChecked()):
 			selected_regions = selected_regions + ["rRNA"]
@@ -85,7 +89,7 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 			selected_regions = selected_regions + [self.mainwindow.inputRegion.toPlainText()]
 
 		self.region_choice = selected_regions
-
+		self.mutex.unlock()
 
 
 ################################################################################
@@ -150,15 +154,18 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 
 	# Logger
 	def log(self, str):
+		self.mutex.lock()
 		self.mainwindow.logOutput.insertPlainText(str + '\n')
 		sb =self.mainwindow.logOutput.verticalScrollBar()
 		sb.setValue(sb.maximum())
+		self.mutex.unlock()
 		
 	def update_progress_bar(self, value):
+		self.mutex.lock()
 		index = self.sender().index
 		if index == 1:
 			self.mainwindow.progressBar.setProperty("value", self.mainwindow.progressBar.value() + value)
-
+		self.mutex.unlock()
 
 	def worker(self):
 

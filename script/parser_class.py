@@ -21,6 +21,8 @@ class ParserClass:
         handle_read = SeqIO.read(handle, "gb")
 
         organism = handle_read.annotations['organism']
+        organism = organism.replace(' ','_').replace('/','_')
+        organism = organism.replace('[','').replace(']','').replace(':','_').replace('\'','')
         features = handle_read.features
 
         visited_regions = [False for i in range(len(region_choice))]
@@ -34,11 +36,11 @@ class ParserClass:
                 # To Do: faire un continue à la région suivante au lieu de tout enlever
                 if cls.error_check(f.location.parts, bornes_expr, handle_read):
                     continue
-
+                
                 header =  f.type + ' ' + organism + ' ' + str(handle_read.id)
                 final_seq = ""
 
-                filename = "{}/{}_{}_{}.txt".format(path ,f.type, organism.replace(" ","_"), handle_read.id)
+                filename = "{}/{}_{}_{}.txt".format(path ,f.type, organism, handle_read.id)
 
                 index = region_choice.index(f.type)
                 if(visited_regions[index] == False):

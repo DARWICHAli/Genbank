@@ -14,12 +14,12 @@ class ParserClass:
     @classmethod
     def manage_errors(cls, f, len_seq, signal):
         if f.location.start < 0:
-            signal.emit("Error : sequence must not start with 0 or less")
-            print("Error : sequence must not start with 0 or less")
+            signal.emit("Error : sequence must not start with 0 or less. {}".format(f.location))
+            print("Error : sequence must not start with 0 or less. {}".format(f.location))
             return True
         elif f.location.start > len_seq or f.location.end > len_seq:
-            signal.emit("Error : sequence borders must be less or equal than total sequence size")
-            print("Error : sequence borders must be less or equal than total sequence size")
+            signal.emit("Error : sequence borders must be less or equal than total sequence size. {}".format(f.location))
+            print("Error : sequence borders must be less or equal than total sequence size. {}".format(f.location))
             return True
         #elif str(f.location.start)[0] == '<' or str(f.location.end)[0] == '>'\
         #        or str(f.location.start)[0] == '>' or str(f.location.end)[0] == '<':
@@ -27,15 +27,15 @@ class ParserClass:
             int(str(f.location.start))
             int(str(f.location.end))
         except:
-            signal.emit("Error : only numerical arguments are accepted for sequence limits")
-            print("Error : only numerical arguments are accepted for sequence limits")
+            signal.emit("Error : only numerical arguments are accepted for sequence limits. {}".format(f.location))
+            print("Error : only numerical arguments are accepted for sequence limits. {}".format(f.location))
             return True
         return False
 
     @classmethod
     def parse_NC(cls, NC, path, region_choice, signal):
         Entrez.email = ''.join(random.choice(string.ascii_lowercase) for i in range(20)) + '@random.com'
-        handle = Entrez.efetch(db="nucleotide", id="NC_015063", rettype="gbwithparts", retmode="text")
+        handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gbwithparts", retmode="text")
         # with open("input.gb", "w") as f:
         #    f.write(handle.read())
         #    f.close()
@@ -60,23 +60,28 @@ class ParserClass:
             pass
         visited_regions = [False, False, False, False, False, False, False, False, False, False]
 
-        options = ["intron"]
+        options = region_choice
+        print(region_choice)
         selected_regions = []
         intron_is_selected = False
         cds_is_selected = False
         for option in options:
             if option in file_regions:
+                if(option == 'CDS'):
+                    cds_is_selected = True
                 selected_regions.append(option)
             elif option == "intron":
                 if "CDS" not in options:
                     selected_regions.append('CDS')
-                else:
-                    cds_is_selected = True
                 intron_is_selected = True
             else:
                 signal.emit('Error : invalid selected option \'{}\''.format(option))
                 print('Error : invalid selected option \'{}\''.format(option))
-
+        print('#######################')
+        print(cds_is_selected)
+        print('#######################')
+        print(intron_is_selected)
+        print('#################################################')
         count_complements = 0
         nb_introns = 0
         for f in features:
@@ -111,7 +116,7 @@ class ParserClass:
                                 os.remove(filename)
                         except:
                             pass
-
+# In: ../Results/Eukaryota/Animals/Fishes/Acanthopagrus_latus
                     if f.type == "CDS":
                         if intron_is_selected:
                             intron_file = open(intron_filename, "a")
@@ -208,7 +213,7 @@ class ParserClass:
                     elif final_seq:
                         result.writelines(final_seq + '\n')
                         result.close()
-        if(nb_introns == 0):
+        if(nb_introns == 0 and intron_is_selected):
             os.remove(intron_file.name)
         print("number of introns found: {}".format(nb_introns))
         return True

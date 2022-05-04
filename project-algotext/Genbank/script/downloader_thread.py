@@ -3,8 +3,11 @@ import time
 import pandas as pd
 import os.path
 import pickle
-from ftp_downloader import ftplib
+from ftp_downloader import *
 from parser_class import ParserClass
+from multiprocessing import Pool
+import shutil
+from ftp_downloader import *
 
 save_pickle = False
 DEBUG = False
@@ -58,7 +61,7 @@ class ThreadClass(QtCore.QThread):
 		for (index, path, NC_LIST) in self.organism_df.itertuples():
 			for NC in NC_LIST:
 
-				if(nb_parsed==10): break
+				if(nb_parsed==100): break
 
 				msg = "Parsing " + str(NC) + '...\n In: ' + str(path)
 				self.any_signal.emit(msg)

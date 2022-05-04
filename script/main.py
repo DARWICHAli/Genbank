@@ -1,5 +1,4 @@
 from PyQt5.QtWidgets import QApplication
-import asyncio
 import genbank as genbank
 
 def main():

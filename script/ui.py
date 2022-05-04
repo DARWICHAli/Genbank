@@ -1,12 +1,5 @@
-from tkinter.tix import INCREASING
-import PyQt5
-from PyQt5 import QtCore, QtGui, QtQuickWidgets, QtWidgets
-from PyQt5.QtWidgets import QFileSystemModel, QHBoxLayout
-from PyQt5.QtCore import QStringListModel
-from functools import partial
-from matplotlib.ft2font import VERTICAL
-import numpy as np
-import genbank as genbank
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QFileSystemModel
 from PyQt5.QtGui import QPixmap
 import os
 
@@ -28,10 +21,9 @@ class Ui_MainWindow(object):
                 # container
                 self.container = QtWidgets.QHBoxLayout(self.centralwidget)
                 self.container.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
-                self.container.setContentsMargins(60, 60, 60, 60)
+                self.container.setContentsMargins(40, 10, 40, 40)
                 self.container.setSpacing(40)
                 self.container.setObjectName("container")
-                
 
                 # left container (partie arborescence)
                 self.left_container = QtWidgets.QVBoxLayout()
@@ -60,7 +52,7 @@ class Ui_MainWindow(object):
                 font.setItalic(False)
                 font.setWeight(50)
                 self.labelArborescence.setFont(font)
-                self.labelArborescence.setStyleSheet("font: 14pt \"Futura\";\n" "color: rgb(0,0,0);")
+                self.labelArborescence.setStyleSheet("font: 25pt \"Futura\";\n" "color: rgb(0,0,0);")
                 self.labelArborescence.setAlignment(QtCore.Qt.AlignCenter)
                 self.labelArborescence.setObjectName("labelArborescence")
                 self.left_container.addWidget(self.labelArborescence)
@@ -172,8 +164,11 @@ class Ui_MainWindow(object):
                 # bar de progression
                 self.progressBar = QtWidgets.QProgressBar(self.horizontalLayoutWidget_2)
                 sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+                sizePolicy.setHorizontalStretch(0)
+                sizePolicy.setVerticalStretch(0)
+                sizePolicy.setHeightForWidth(self.progressBar.sizePolicy().hasHeightForWidth())
                 self.progressBar.setSizePolicy(sizePolicy)
-                self.progressBar.setStyleSheet("color:rgb(0, 250, 125);")
+                self.progressBar.setStyleSheet("background-color: rgb(0, 4, 8);\n" "color:rgb(0, 250, 125);")
                 self.progressBar.setProperty("value", 0)
                 self.progressBar.setObjectName("progressBar")
                 self.left_container.addWidget(self.progressBar)
@@ -215,7 +210,7 @@ class Ui_MainWindow(object):
                 sizePolicy.setVerticalStretch(0)
                 sizePolicy.setHeightForWidth(self.labelPreferences.sizePolicy().hasHeightForWidth())
                 self.labelPreferences.setSizePolicy(sizePolicy)
-                self.labelPreferences.setStyleSheet("font: 14pt \"Futura\";\n")
+                self.labelPreferences.setStyleSheet("font: 75 25pt \"Futura\";\n")
                 self.labelPreferences.setAlignment(QtCore.Qt.AlignCenter)
                 self.labelPreferences.setObjectName("labelPreferences")
                 self.right_container.addWidget(self.labelPreferences)
@@ -240,7 +235,7 @@ class Ui_MainWindow(object):
                 sizePolicy.setVerticalStretch(0)
                 sizePolicy.setHeightForWidth(self.labelKingdoms.sizePolicy().hasHeightForWidth())
                 self.labelKingdoms.setSizePolicy(sizePolicy)
-                self.labelKingdoms.setStyleSheet("\n" "font: 14pt \"Futura\";\n" "color:rgb(0, 250, 125);")
+                self.labelKingdoms.setStyleSheet("\n" "font: 75 18pt \"Futura\";\n" "color:rgb(0, 250, 125);")
                 self.labelKingdoms.setObjectName("labelKingdoms")
                 self.inner_menu_container.addWidget(self.labelKingdoms)
                 self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
@@ -282,9 +277,9 @@ class Ui_MainWindow(object):
                 self.container_input_kingdom.setContentsMargins(10, -1, 40, -1)
                 self.container_input_kingdom.setObjectName("container_input_kingdom")
                 self.labelinputKingdom = QtWidgets.QLabel(self.horizontalLayoutWidget_2)
-                
-
                 sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+                sizePolicy.setHorizontalStretch(0)
+                sizePolicy.setVerticalStretch(0)
                 sizePolicy.setHeightForWidth(self.labelinputKingdom.sizePolicy().hasHeightForWidth())
                 self.labelinputKingdom.setSizePolicy(sizePolicy)
                 self.labelinputKingdom.setStyleSheet("")
@@ -297,18 +292,15 @@ class Ui_MainWindow(object):
                 sizePolicy.setVerticalStretch(0)
                 sizePolicy.setHeightForWidth(self.inputKingdom.sizePolicy().hasHeightForWidth())
                 self.inputKingdom.setSizePolicy(sizePolicy)
-                self.inputKingdom.setMaximumSize(QtCore.QSize(200, 40))
+                self.inputKingdom.setMaximumSize(QtCore.QSize(150, 25))
                 self.inputKingdom.setLayoutDirection(QtCore.Qt.LeftToRight)
                 self.inputKingdom.setStyleSheet("")
                 self.inputKingdom.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
                 self.inputKingdom.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
                 self.inputKingdom.setObjectName("inputKingdom")
-
-
                 self.container_input_kingdom.addWidget(self.inputKingdom)
                 self.container_input_kingdom.setStretch(0, 1)
                 self.container_input_kingdom.setStretch(1, 2)
-                self.container_input_kingdom.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
                 self.inner_menu_container.addLayout(self.container_input_kingdom)
                 self.labelRegions = QtWidgets.QLabel(self.horizontalLayoutWidget_2)
                 sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -317,7 +309,7 @@ class Ui_MainWindow(object):
                 sizePolicy.setHeightForWidth(self.labelRegions.sizePolicy().hasHeightForWidth())
                 self.labelRegions.setSizePolicy(sizePolicy)
                 self.labelRegions.setObjectName("labelRegions")
-                self.labelRegions.setStyleSheet("\n" "font: 14pt \"Futura\";""color: rgb(0, 250, 125);")
+                self.labelRegions.setStyleSheet("\n" "font: 75 18pt \"Futura\";""color: rgb(0, 250, 125);")
                 self.inner_menu_container.addWidget(self.labelRegions)
                 self.horizontalLayout_4 = QtWidgets.QHBoxLayout()
                 self.horizontalLayout_4.setSpacing(0)
@@ -397,7 +389,7 @@ class Ui_MainWindow(object):
                 sizePolicy.setVerticalStretch(0)
                 sizePolicy.setHeightForWidth(self.inputRegion.sizePolicy().hasHeightForWidth())
                 self.inputRegion.setSizePolicy(sizePolicy)
-                self.inputRegion.setMaximumSize(QtCore.QSize(200, 40))
+                self.inputRegion.setMaximumSize(QtCore.QSize(150, 25))
                 self.inputRegion.setLayoutDirection(QtCore.Qt.LeftToRight)
                 self.inputRegion.setStyleSheet("")
                 self.inputRegion.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
@@ -421,27 +413,29 @@ class Ui_MainWindow(object):
                 sizePolicy.setHeightForWidth(self.labelLog.sizePolicy().hasHeightForWidth())
                 self.labelLog.setSizePolicy(sizePolicy)
                 self.labelLog.setMinimumSize(QtCore.QSize(0, 0))
-                self.labelLog.setStyleSheet("\n" "font: 14pt \"Futura\";\n" " color: rgb(0, 0, 0);")
+                self.labelLog.setStyleSheet("\n" "font: 75 20pt \"Futura\";\n" " color: rgb(0, 0, 0);")
                 self.labelLog.setContentsMargins(50, 0, 0, 0)
                 self.labelLog.setObjectName("labelLog")
                 self.right_container.addWidget(self.labelLog)
                 self.container_log = QtWidgets.QHBoxLayout()
                 self.container_log.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
                 self.container_log.setObjectName("container_log")
-                self.container_log.setContentsMargins(50, 0, 50, 0)
-                
+                self.container_log.setContentsMargins(50, 0, 0, 0)
+
+                self.labelLog.setSizePolicy(sizePolicy)
+                self.labelLog.setStyleSheet("font: 75 25pt \"Futura\";\n")
                 self.labelLog.setAlignment(QtCore.Qt.AlignCenter)
                 self.labelLog.setObjectName("container_log")
 
                 self.logOutput = QtWidgets.QTextEdit()
                 self.logOutput.setReadOnly(True)
                 self.logOutput.setLineWrapMode(QtWidgets.QTextEdit.NoWrap)
+                
                 font = self.logOutput.font()
                 font.setFamily("Courier")
-                font.setPointSize(8)
+                font.setPointSize(11)
                 self.logOutput.moveCursor(QtGui.QTextCursor.End)
                 self.logOutput.setCurrentFont(font)
-                
                 sb = self.logOutput.verticalScrollBar()
                 sb.setValue(sb.maximum())
                 #self.logOutput.setStyleSheet("background-color: rgb(0, 4, 38);\n" "color: rgb(0, 250, 125);")
@@ -476,9 +470,135 @@ class Ui_MainWindow(object):
                 sizePolicy.setHorizontalStretch(0)
                 sizePolicy.setVerticalStretch(0)
 
+
                 self.horizontalLayoutWidget_2.raise_()
                 self.horizontalLayoutWidget.raise_()
                 MainWindow.setCentralWidget(self.centralwidget)
+                self.Menu = QtWidgets.QMenuBar(MainWindow)
+                self.Menu.setGeometry(QtCore.QRect(0, 0, 1171, 22))
+                self.Menu.setStyleSheet("")
+                self.Menu.setObjectName("Menu")
+                self.menuParametres = QtWidgets.QMenu(self.Menu)
+                self.menuParametres.setObjectName("menuParametres")
+                self.menuChoixKingdoms = QtWidgets.QMenu(self.menuParametres)
+                self.menuChoixKingdoms.setObjectName("menuChoixKingdoms")
+                self.menuChoixRegions = QtWidgets.QMenu(self.menuParametres)
+                self.menuChoixRegions.setObjectName("menuChoixRegions")
+                self.menuControles = QtWidgets.QMenu(self.Menu)
+                self.menuControles.setObjectName("menuControles")
+                MainWindow.setMenuBar(self.Menu)
+                self.statusbar = QtWidgets.QStatusBar(MainWindow)
+                self.statusbar.setObjectName("statusbar")
+                MainWindow.setStatusBar(self.statusbar)
+              
+                self.actionEucaryota = QtWidgets.QAction(MainWindow)
+                self.actionEucaryota.setCheckable(True)
+                self.actionEucaryota.setChecked(True)
+                self.actionEucaryota.setObjectName("actionEucaryota")
+              
+                self.actionBacteria = QtWidgets.QAction(MainWindow)
+                self.actionBacteria.setCheckable(True)
+                self.actionBacteria.setChecked(True)
+                self.actionBacteria.setObjectName("actionBacteria")
+              
+                self.actionArchaea = QtWidgets.QAction(MainWindow)
+                self.actionArchaea.setCheckable(True)
+                self.actionArchaea.setChecked(True)
+                self.actionArchaea.setObjectName("actionArchaea")
+             
+                self.actionrNA = QtWidgets.QAction(MainWindow)
+                self.actionrNA.setCheckable(True)
+                self.actionrNA.setChecked(True)
+                self.actionrNA.setObjectName("actionrNA")
+             
+                self.actionCDS = QtWidgets.QAction(MainWindow)
+                self.actionCDS.setCheckable(True)
+                self.actionCDS.setChecked(True)
+                self.actionCDS.setObjectName("actionCDS")
+              
+                self.actionIntron = QtWidgets.QAction(MainWindow)
+                self.actionIntron.setCheckable(True)
+                self.actionIntron.setChecked(True)
+                self.actionIntron.setObjectName("actionIntron")
+               
+                self.actionncRNA = QtWidgets.QAction(MainWindow)
+                self.actionncRNA.setCheckable(True)
+                self.actionncRNA.setChecked(True)
+                self.actionncRNA.setObjectName("actionncRNA")
+              
+                self.actionCentromere = QtWidgets.QAction(MainWindow)
+                self.actionCentromere.setCheckable(True)
+                self.actionCentromere.setChecked(True)
+                self.actionCentromere.setObjectName("actionCentromere")
+              
+                self.actionTelomere = QtWidgets.QAction(MainWindow)
+                self.actionTelomere.setCheckable(True)
+                self.actionTelomere.setChecked(True)
+                self.actionTelomere.setObjectName("actionTelomere")
+              
+                self.action3_UTR = QtWidgets.QAction(MainWindow)
+                self.action3_UTR.setCheckable(True)
+                self.action3_UTR.setChecked(True)
+                self.action3_UTR.setObjectName("action3_UTR")
+              
+                self.action5_UTR = QtWidgets.QAction(MainWindow)
+                self.action5_UTR.setCheckable(True)
+                self.action5_UTR.setChecked(True)
+                self.action5_UTR.setObjectName("action5_UTR")
+              
+                self.actiontRNA = QtWidgets.QAction(MainWindow)
+                self.actiontRNA.setCheckable(True)
+                self.actiontRNA.setChecked(True)
+                self.actiontRNA.setObjectName("actiontRNA")
+              
+                self.actionmobile_element = QtWidgets.QAction(MainWindow)
+                self.actionmobile_element.setCheckable(True)
+                self.actionmobile_element.setChecked(True)
+                self.actionmobile_element.setObjectName("actionmobile_element")
+              
+                self.actionViruses = QtWidgets.QAction(MainWindow)
+                self.actionViruses.setCheckable(True)
+                self.actionViruses.setChecked(True)
+                self.actionViruses.setObjectName("actionViruses")
+
+                self.actionStart = QtWidgets.QAction(MainWindow)
+                self.actionStart.setObjectName("actionStart")
+             
+                self.actionStop = QtWidgets.QAction(MainWindow)
+                self.actionStop.setObjectName("actionStop")
+             
+                self.actionReprendre = QtWidgets.QAction(MainWindow)
+                self.actionReprendre.setObjectName("actionReprendre")
+             
+                self.actionRedemarrer = QtWidgets.QAction(MainWindow)
+                self.actionRedemarrer.setObjectName("actionRedemarrer")
+               
+                self.menuChoixKingdoms.addAction(self.actionEucaryota)
+                self.menuChoixKingdoms.addAction(self.actionBacteria)
+                self.menuChoixKingdoms.addAction(self.actionArchaea)
+                self.menuChoixKingdoms.addAction(self.actionViruses)
+               
+                self.menuChoixRegions.addAction(self.actionrNA)
+                self.menuChoixRegions.addAction(self.actionCDS)
+                self.menuChoixRegions.addAction(self.actionIntron)
+                self.menuChoixRegions.addAction(self.actionncRNA)
+                self.menuChoixRegions.addAction(self.actionCentromere)
+                self.menuChoixRegions.addAction(self.actionTelomere)
+                self.menuChoixRegions.addAction(self.action3_UTR)
+                self.menuChoixRegions.addAction(self.action5_UTR)
+                self.menuChoixRegions.addAction(self.actiontRNA)
+                self.menuChoixRegions.addAction(self.actionmobile_element)
+               
+                self.menuParametres.addAction(self.menuChoixKingdoms.menuAction())
+                self.menuParametres.addAction(self.menuChoixRegions.menuAction())
+               
+                self.menuControles.addAction(self.actionStart)
+                self.menuControles.addAction(self.actionStop)
+                self.menuControles.addAction(self.actionReprendre)
+                self.menuControles.addAction(self.actionRedemarrer)
+               
+                self.Menu.addAction(self.menuControles.menuAction())
+                self.Menu.addAction(self.menuParametres.menuAction())
 
                 self.retranslateUi(MainWindow)
                 QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -514,7 +634,29 @@ class Ui_MainWindow(object):
                 self.checkBox_mobile_intron.setText(_translate("MainWindow", "Intron"))
                 self.label_inputRegion.setText(_translate("MainWindow", "Personnalisé:"))
                 self.labelLog.setText(_translate("MainWindow", "Info"))
-                
+                self.menuParametres.setTitle(_translate("MainWindow", "Paramètres"))
+                self.menuChoixKingdoms.setTitle(_translate("MainWindow", "Choix des Kingdoms"))
+                self.menuChoixRegions.setTitle(_translate("MainWindow", "Choix des régions fonctionnelles"))
+                self.menuControles.setTitle(_translate("MainWindow", "Contrôles"))
+                self.actionEucaryota.setText(_translate("MainWindow", "Eucaryota"))
+                self.actionBacteria.setText(_translate("MainWindow", "Bacteria"))
+                self.actionArchaea.setText(_translate("MainWindow", "Archaea"))
+                self.actionrNA.setText(_translate("MainWindow", "rRNA"))
+                self.actionCDS.setText(_translate("MainWindow", "CDS"))
+                self.actionIntron.setText(_translate("MainWindow", "Intron"))
+                self.actionncRNA.setText(_translate("MainWindow", "ncRNA"))
+                self.actionCentromere.setText(_translate("MainWindow", "Centromère"))
+                self.actionTelomere.setText(_translate("MainWindow", "Telomère"))
+                self.action3_UTR.setText(_translate("MainWindow", "3\'UTR"))
+                self.action5_UTR.setText(_translate("MainWindow", "5\'UTR"))
+                self.actiontRNA.setText(_translate("MainWindow", "tRNA"))
+                self.actionmobile_element.setText(_translate("MainWindow", "mobile element"))
+                self.actionViruses.setText(_translate("MainWindow", "Viruses"))
+                self.actionStart.setText(_translate("MainWindow", "Démarrer"))
+                self.actionStop.setText(_translate("MainWindow", "Stop"))
+                self.actionReprendre.setText(_translate("MainWindow", "Reprendre"))
+                self.actionRedemarrer.setText(_translate("MainWindow", "Redémarrer"))
+
         def connect_ui(self, genbank):
                 self.buttonStart.clicked.connect(genbank.worker)
 

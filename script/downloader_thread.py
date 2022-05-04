@@ -1,15 +1,10 @@
 from PyQt5 import QtCore
-import datetime
 import time
-import os
 import pandas as pd
 import os.path
 import pickle
-import shutil
-from ftplib import FTP
-from ftp_downloader import *
+from ftp_downloader import ftplib
 from parser_class import ParserClass
-import asyncio
 
 save_pickle = False
 DEBUG = False
@@ -19,7 +14,7 @@ VERBOSE = False
 class ThreadClass(QtCore.QThread):
 	
 	progress_signal = QtCore.pyqtSignal(float)
-	log_signal = QtCore.pyqtSignal(str)
+	any_signal = QtCore.pyqtSignal(str)
 	dataframe_result = QtCore.pyqtSignal(pd.core.frame.DataFrame)
 	time_signal = QtCore.pyqtSignal(float)
 	end_signal = QtCore.pyqtSignal(str)
@@ -35,8 +30,7 @@ class ThreadClass(QtCore.QThread):
 		parent.kingdom_signal.connect(self.get_kingdom_choice)
 		self.isRunning = False
 		self.organism_df = 0
-		self.nb_NC = 0
-		
+
 ################################################################################
 ################################################################################
 
@@ -47,43 +41,38 @@ class ThreadClass(QtCore.QThread):
 
 		start_time = time.time()
 
+		
 		self.load_tree()
 		
 		msg = "Download overview and IDS time : "
-		self.log_signal.emit(msg)
+		self.any_signal.emit(msg)
 		self.time_signal.emit(time.time() - start_time)
 
 		start_time = time.time()
 
 		msg = "Started Parsing files..."
 		print(msg)
-		self.log_signal.emit(msg)
+		self.any_signal.emit(msg)
 
-		self.nb_NC = sum( len(n) for n in self.organism_df["NC"] )
-		print(self.nb_NC)
 		# About 157421 files to parse in total, we test with the first 10
-		self.nb_NC=100 
 		for (index, path, NC_LIST) in self.organism_df.itertuples():
-			# We only parse kingdoms selected by user
-			kingdom = path.split('/')[2]
-			if(kingdom not in self.kingdoms_choice): continue
+			for NC in NC_LIST:
 
-			for NC in NC_LIST:	
-				if(nb_parsed==50): break
+				if(nb_parsed==10): break
+
 				msg = "Parsing " + str(NC) + '...\n In: ' + str(path)
-				self.log_signal.emit(msg)
+				self.any_signal.emit(msg)
 				print(msg)
-				if(ParserClass.parse_NC(NC, path, self.regions_choice, self.log_signal) == False):
+				if(ParserClass.parse_NC(NC, path, self.regions_choice, self.any_signal) == False):
 					msg = "Erreur Parsing " + str(NC) + ". Fichier supprimé."
 				else:
 					msg = "Parsing de " + str(NC) + " réussis."
-				self.log_signal.emit(msg)
+				self.any_signal.emit(msg)
 				print(msg)
 				nb_parsed+=1
-				self.progress_signal.emit(100./self.nb_NC)
 
 		msg = "Parsing finished in: "
-		self.log_signal.emit(msg)
+		self.any_signal.emit(msg)
 		print(msg)
 		self.time_signal.emit(time.time() - start_time)
 		print(str(time.time() - start_time))
@@ -96,6 +85,7 @@ class ThreadClass(QtCore.QThread):
 		index = self.sender().index
 		if(index == 0):
 			self.regions_choice = regions_choice
+			#print(self.regions_choice)
 
 
 	def get_kingdom_choice(self, kingdoms_choice):
@@ -103,6 +93,7 @@ class ThreadClass(QtCore.QThread):
 		index = self.sender().index
 		if(index == 0):
 			self.kingdoms_choice = kingdoms_choice
+			#print(self.kingdoms_choice)
 
 ################################################################################
 ################################################################################
@@ -132,8 +123,7 @@ class ThreadClass(QtCore.QThread):
 					# we only want the kingdoms that were selected by the user
 					if(kingdom not in self.kingdoms_choice): 
 						continue
-					organism = parsed_row[0].replace(' ','_').replace('/','_')
-					organism = organism.replace('[','').replace(']','').replace(':','_').replace('\'','')
+					organism = parsed_row[0].replace(' ','_').replace('/','_').replace('[','').replace(']','').replace(':','_').replace('\'','')
 					group = parsed_row[2].replace(' ','_').replace('/','_')
 					subgroup = parsed_row[3].replace(' ','_').replace('/','_')
 
@@ -151,7 +141,7 @@ class ThreadClass(QtCore.QThread):
 			print('overview done !')
 		msg = "Overview Done. Parsing IDS to store in pickle dataframe..."
 		print(msg)
-		self.log_signal.emit(msg) 
+		self.any_signal.emit(msg) 
 
 		#organism_names_ids = [] # we will store the organisms names here
 		organism_paths_dataframe = []	# we will store the organisms paths here
@@ -164,7 +154,8 @@ class ThreadClass(QtCore.QThread):
 			i += 1
 
 			msg = "Parsing " + str(ids) + "..."
-			self.log_signal.emit(msg)
+			self.progress_signal.emit(1)
+			self.any_signal.emit(msg)
 			with open('../GENOME_REPORTS/IDS/' + ids) as f:
 				#n_line = sum(1 for _ in f)
 				if VERBOSE:
@@ -199,14 +190,12 @@ class ThreadClass(QtCore.QThread):
 						# checking if we have already added this organism to the array
 						# If so, we simply add another NC
 						organism_NC_dataframe[organism_paths_dataframe.index(organism_paths[index])].append(parsed_row[1])
-						self.nb_NC += 1
 					except ValueError:
 						# We encouter this organism for the first time, we add it to the array with the NC
 						#organism_names_ids.append(organism_names[index])
 						try:
 							organism_paths_dataframe.append(organism_paths[index])
 							organism_NC_dataframe.append([parsed_row[1]])
-							self.nb_NC += 1
 						except: pass
 					
 		print("found: " + str(found))
@@ -233,7 +222,7 @@ class ThreadClass(QtCore.QThread):
 
 		msg = "Loading dataframe from pickle..."
 		print(msg)
-		self.log_signal.emit(msg)
+		self.any_signal.emit(msg)
 
 		try:
 			with open("../pickle/organism_df", 'rb') as f:
@@ -241,12 +230,12 @@ class ThreadClass(QtCore.QThread):
 		except IOError:
 			msg = "pickle file not accessible"
 			print(msg)
-			self.log_signal.emit(msg) 
+			self.any_signal.emit(msg) 
 			return
 
 		msg = "Creating hierarchy..."
 		print(msg)
-		self.log_signal.emit(msg)
+		self.any_signal.emit(msg)
 		for i in range(len(organism_df)):
 			# name = organism_df["name"][i].replace(" ", "_")
 			# name = name.replace("[", "_")
@@ -258,7 +247,7 @@ class ThreadClass(QtCore.QThread):
 
 		msg = "Finished loading hierarchy"
 		print(msg)
-		self.log_signal.emit(msg)
+		self.any_signal.emit(msg)
 
 		self.dataframe_result.emit(organism_df)
 
@@ -276,7 +265,7 @@ class ThreadClass(QtCore.QThread):
 		self.isRunning = False
 		print("Stopping thread...",self.index)
 		msg = "Stopping thread..." + str(self.index)
-		self.log_signal.emit(msg)
+		self.any_signal.emit(msg)
 		self.terminate()
 		
 	
@@ -361,7 +350,7 @@ class ThreadClass(QtCore.QThread):
 
 		msg = "Downloading files..."
 		print(msg)
-		self.log_signal.emit(msg)
+		self.any_signal.emit(msg)
 		print(files)
 		with Pool(5) as p:
 			p.map(download_ftp_file, files)

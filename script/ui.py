@@ -60,7 +60,7 @@ class Ui_MainWindow(object):
                 font.setItalic(False)
                 font.setWeight(50)
                 self.labelArborescence.setFont(font)
-                self.labelArborescence.setStyleSheet("font: 18pt \"Futura\";\n" "color: rgb(0,0,0);")
+                self.labelArborescence.setStyleSheet("font: 14pt \"Futura\";\n" "color: rgb(0,0,0);")
                 self.labelArborescence.setAlignment(QtCore.Qt.AlignCenter)
                 self.labelArborescence.setObjectName("labelArborescence")
                 self.left_container.addWidget(self.labelArborescence)
@@ -215,7 +215,7 @@ class Ui_MainWindow(object):
                 sizePolicy.setVerticalStretch(0)
                 sizePolicy.setHeightForWidth(self.labelPreferences.sizePolicy().hasHeightForWidth())
                 self.labelPreferences.setSizePolicy(sizePolicy)
-                self.labelPreferences.setStyleSheet("font: 18pt \"Futura\";\n")
+                self.labelPreferences.setStyleSheet("font: 14pt \"Futura\";\n")
                 self.labelPreferences.setAlignment(QtCore.Qt.AlignCenter)
                 self.labelPreferences.setObjectName("labelPreferences")
                 self.right_container.addWidget(self.labelPreferences)
@@ -428,20 +428,20 @@ class Ui_MainWindow(object):
                 self.container_log = QtWidgets.QHBoxLayout()
                 self.container_log.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
                 self.container_log.setObjectName("container_log")
-                self.container_log.setContentsMargins(50, 0, 0, 0)
-
+                self.container_log.setContentsMargins(50, 0, 50, 0)
+                
                 self.labelLog.setAlignment(QtCore.Qt.AlignCenter)
                 self.labelLog.setObjectName("container_log")
 
                 self.logOutput = QtWidgets.QTextEdit()
                 self.logOutput.setReadOnly(True)
                 self.logOutput.setLineWrapMode(QtWidgets.QTextEdit.NoWrap)
-                
                 font = self.logOutput.font()
                 font.setFamily("Courier")
-                font.setPointSize(11)
+                font.setPointSize(8)
                 self.logOutput.moveCursor(QtGui.QTextCursor.End)
                 self.logOutput.setCurrentFont(font)
+                
                 sb = self.logOutput.verticalScrollBar()
                 sb.setValue(sb.maximum())
                 #self.logOutput.setStyleSheet("background-color: rgb(0, 4, 38);\n" "color: rgb(0, 250, 125);")

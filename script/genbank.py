@@ -22,11 +22,13 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 
 	region_signal = QtCore.pyqtSignal(list)
 	kingdom_signal = QtCore.pyqtSignal(list)
-	
+	pause_signal = QtCore.pyqtSignal(bool)
+
 	def __init__(self, parent = None, index = 0):
 		super(Genbank, self).__init__(parent)
 		QtWidgets.QMainWindow.__init__(self)
 		self.isRunning = False
+		self.isPaused = False
 		self.index = index
 		self.MainWindow = QtWidgets.QMainWindow()
 		self.mainwindow = Ui_MainWindow()
@@ -138,6 +140,7 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 			self.mainwindow.checkBox_3utr.setEnabled(True)
 			self.mainwindow.checkBox_5utr.setEnabled(True)
 			self.mainwindow.checkBox_telomere.setEnabled(True)
+			self.mainwindow.checkBox_mobile_ncrna.setEnabled(True)
 
 ################################################################################
 ################################################################################
@@ -194,7 +197,9 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 			self.get_region_choice()
 
 			if not len(self.region_choice) or not len(self.kingdom_choice):
+				self.mainwindow.logOutput.setStyleSheet("color: rgb(255,0,0);")
 				self.log("Il faut choisir au moins une région fonctionnelle et une Kingdom!")
+				self.mainwindow.logOutput.setStyleSheet("color: rgb(0,0,0);")
 				return
 
 			self.isRunning = True
@@ -217,25 +222,41 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 			self.mainwindow.checkBox_3utr.setEnabled(False)
 			self.mainwindow.checkBox_5utr.setEnabled(False)
 			self.mainwindow.checkBox_telomere.setEnabled(False)
+			self.mainwindow.checkBox_mobile_ncrna.setEnabled(False)
 
 			self.thread[1] = ThreadClass(parent = self, index=1)
 			self.thread[1].start()
 			self.region_signal.emit(self.region_choice)
 			self.kingdom_signal.emit(self.kingdom_choice)
-			self.thread[1].any_signal.connect(self.start)
+			self.thread[1].log_signal.connect(self.start)
 			self.thread[1].dataframe_result.connect(self.get_result)
 			self.thread[1].progress_signal.connect(self.update_progress_bar)
 			self.thread[1].time_signal.connect(self.start)
 			self.thread[1].end_signal.connect(self.end)
 			self.mainwindow.logOutput.clear()
-			self.mainwindow.logOutput.insertPlainText('Parsing Started\n')
+			self.mainwindow.logOutput.insertPlainText('Program Started\n')
 
-		else:
+		elif ( self.isRunning == True):
 			self.mainwindow.buttonStart.setText("Start Parsing")
 			self.mainwindow.buttonStart.setStyleSheet("background-color: rgb(0, 250, 125);\n" "color:rgb(0, 4, 38);")
-			self.thread[1].stop()
 			self.isRunning = False
-			self.mainwindow.logOutput.clear()
-			self.mainwindow.logOutput.insertPlainText('Parsing stopped\n')
-		
-		
+			self.thread[1].stop()
+			#self.mainwindow.logOutput.setText("")
+			self.log("Parsing stopped")
+			self.mainwindow.inputKingdom.setEnabled(True)
+			self.mainwindow.inputRegion.setEnabled(True)
+			self.mainwindow.checkBox_archaea.setEnabled(True)
+			self.mainwindow.checkBox_bacteria.setEnabled(True)
+			self.mainwindow.checkBox_eukaryota.setEnabled(True)
+			self.mainwindow.checkBox_viruses.setEnabled(True)
+			self.mainwindow.checkBox_archaea.setEnabled(True)
+			self.mainwindow.checkBox_cds.setEnabled(True)
+			self.mainwindow.checkBox_centromere.setEnabled(True)
+			self.mainwindow.checkBox_mobile_element.setEnabled(True)
+			self.mainwindow.checkBox_mobile_intron.setEnabled(True)
+			self.mainwindow.checkBox_rrna.setEnabled(True)
+			self.mainwindow.checkBox_trna.setEnabled(True)
+			self.mainwindow.checkBox_3utr.setEnabled(True)
+			self.mainwindow.checkBox_5utr.setEnabled(True)
+			self.mainwindow.checkBox_telomere.setEnabled(True)
+			self.mainwindow.checkBox_mobile_ncrna.setEnabled(True)

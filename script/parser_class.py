@@ -15,7 +15,7 @@ class ParserClass:
 
 
     @classmethod
-    def parse_NC(cls, NC, path, region_choice):
+    def parse_NC(cls, NC, path, region_choice, any_signal):
         
         Entrez.email = ''.join(random.choice(string.ascii_lowercase) for i in range(20)) + '@random.com'
         handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gbwithparts", retmode="text")

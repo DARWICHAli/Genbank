@@ -59,15 +59,15 @@ class ThreadClass(QtCore.QThread):
 		print(msg)
 		self.log_signal.emit(msg)
 
-		to_parse = 100
+		to_parse = 10
 		total = sum(len(n) for n in self.organism_df['NC'])
-		self.nb_NC = total
+		self.nb_NC = to_parse
 		self.nb_parsed = 0
 		# About 157421 files to parse in total, we test with the first 10
 		for (index, path, NC_LIST) in self.organism_df.itertuples():
 			for NC in NC_LIST:
 				if(not path.split('/')[2] in self.kingdoms_choice): continue
-				#if(nb_parsed==to_parse): break
+				if(nb_parsed==to_parse): break
 
 				msg = "Parsing " + str(NC) + ' in: ' + str(path)
 				self.log_signal.emit(msg)
@@ -153,6 +153,7 @@ class ThreadClass(QtCore.QThread):
 		i = 0
 		found = 0
 		not_found = 0
+
 		# looping through the kingdoms ids files (viruses.ids, archaea.ids, etc ..)
 		for ids in ids_files:
 			i += 1
@@ -200,13 +201,13 @@ class ThreadClass(QtCore.QThread):
 							organism_NC_dataframe.append([parsed_row[1]])
 						except: pass
 					
-		print("found: " + str(found))
-		print("not found " + str(not_found))
+
 		# Store the organisms in pandas DataFrame
 		organism_df = pd.DataFrame({
 					#"name":organism_names_ids,
 					"path":organism_paths_dataframe,
 					"NC":organism_NC_dataframe})
+		print(organism_df)
 
 		# Create a pickle file to save the dataframe in local
 		if not os.path.exists("../pickle"):
@@ -345,12 +346,15 @@ class ThreadClass(QtCore.QThread):
 		files = [("", "overview.txt")]
 
 		for k in self.kingdoms_choice:
-			# if k not in ["Eukaryota","Viruses","Archaea","Bacteria","Mito_metazoa","Phages","Plasmids","Samples","Viroids","dsDNA_Viruses"]:
-			# 	self.log_signal.emit("WARNING: Wrong kingdom input {}. Ignored.".format(k))
-			# 	print("skip")
-			# 	continue
+			if k not in ["Eukaryota","Viruses","Archaea","Bacteria","Mito_metazoa","Phages","Plasmids","Samples","Viroids","dsDNA_Viruses"]:
+				self.log_signal.emit("WARNING: Wrong kingdom input {}. Ignored.".format(k))
+				print("skip")
+				continue
 			files.append(("IDS", k + '.ids'))
 
+		if(len(files) == 1):
+			self.log_signal.emit("ERROR: No Kingdom Selected.")
+			print("No kingdom")
 		# Adding destination
 		files = [(directory,) + f for f in files]
 

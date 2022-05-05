@@ -30,7 +30,7 @@ class Ui_MainWindow(object):
                 self.left_container = QtWidgets.QVBoxLayout()
                 self.left_container.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
                 self.left_container.setContentsMargins(0, 100, 0, 50)
-                self.left_container.setSpacing(8)
+                self.left_container.setSpacing(10)
                 self.left_container.setObjectName("left_container")
 
                 # layout tree labels

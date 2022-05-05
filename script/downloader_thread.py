@@ -345,6 +345,10 @@ class ThreadClass(QtCore.QThread):
 		files = [("", "overview.txt")]
 
 		for k in self.kingdoms_choice:
+			# if k not in ["Eukaryota","Viruses","Archaea","Bacteria","Mito_metazoa","Phages","Plasmids","Samples","Viroids","dsDNA_Viruses"]:
+			# 	self.log_signal.emit("WARNING: Wrong kingdom input {}. Ignored.".format(k))
+			# 	print("skip")
+			# 	continue
 			files.append(("IDS", k + '.ids'))
 
 		# Adding destination

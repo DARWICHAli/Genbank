@@ -30,13 +30,14 @@ def download_ftp_file(arg):
     
     
     try_count = 0
+    ftp = ftplib.FTP("ftp.ncbi.nlm.nih.gov")
+    ftp.set_pasv(True)
 
     while(True):
         try:
-            f= open(os.path.join(dst, dir, file), "wb")
-            ftp = ftplib.FTP("ftp.ncbi.nlm.nih.gov")
-            ftp.login()
 
+            f= open(os.path.join(dst, dir, file), "wb")
+            ftp.login()
             # IDs
             if len(dir):
                 ftp.cwd(GENOME_PATH + "/" + dir)
@@ -53,7 +54,15 @@ def download_ftp_file(arg):
             else:
                 print(e)
                 sleep(try_count * 2)
-            try: f.close()
+            try: 
+                f.close()
+            except: 
+                print("error file")
+                pass
+            try:
+                reply = ftp.quit()
+                #print(reply)
             except: pass
     
     f.close()
+    ftp.quit()

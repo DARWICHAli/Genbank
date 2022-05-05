@@ -81,6 +81,7 @@ class ParserClass:
 
         count_complements = 0
         nb_introns = 0
+        intron_file =""
         for f in features:
             if f.type in selected_regions:
                 if f.location:
@@ -212,8 +213,10 @@ class ParserClass:
                         result.writelines(final_seq + '\n')
                         result.close()
         if(nb_introns == 0 and intron_is_selected):
-            intron_file.close()
-            os.remove(intron_file.name)
+            try:
+                intron_file.close()
+                os.remove(intron_file.name)
+            except: pass
         #print("number of introns found: {}".format(nb_introns))
         return True
 

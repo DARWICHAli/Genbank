@@ -5,7 +5,7 @@ from Bio import SeqIO, Entrez
 from Bio.SeqFeature import FeatureLocation
 from datetime import datetime, timedelta, date
 import time
-import re # compiling the pattern for alphanumeric 
+import re # compiling the pattern for alphanumeric
 import glob
 import warnings
 
@@ -54,18 +54,19 @@ class ParserClass:
 
         # delete 'intron' from regions beceause it's not actually a region but just a parsing option
         regions = ["CDS", "centromere", "mobile_element", "ncRNA", "rRNA", "telomere", "tRNA", "3'UTR", "5'UTR"]
-        try: 
+        try:
             file_regions = handle_read.annotations['structured_comment']['Genome-Annotation-Data']['Features Annotated'].split("; ")
         except:
             print("except region")
             file_regions = regions
-            
+
         visited_regions = [False, False, False, False, False, False, False, False, False, False]
 
         options = region_choice
         selected_regions = []
         intron_is_selected = False
         cds_is_selected = False
+        intron_file = ""
         for option in options:
             if option in file_regions:
                 if(option == 'CDS'):
@@ -81,7 +82,6 @@ class ParserClass:
 
         count_complements = 0
         nb_introns = 0
-        intron_file =""
         for f in features:
             if f.type in selected_regions:
                 if f.location:
@@ -216,7 +216,9 @@ class ParserClass:
             try:
                 intron_file.close()
                 os.remove(intron_file.name)
-            except: pass
+            except:
+                pass
+
         #print("number of introns found: {}".format(nb_introns))
         return True
 
@@ -249,14 +251,15 @@ class ParserClass:
             else:
                 seq_join_intern.append(str(l.extract(sequence)))
             last_end = l.end
-            
+
         header += '))' if (isComplement == -1) else ')'
 
         seq_join_intern = seq_join_intern[::isComplement]
 
         final_seq += header + '\n' + "".join(seq_join_intern)
 
-        header = header.replace("CDS", "intron")
+        if intron:
+            header = header.replace("CDS", "intron")
         for (i, s) in enumerate(seq_join_intern):
             key_word = ' Intron ' if intron else ' Exon '
             final_seq += '\n' + header + key_word + str(i + 1) + '\n' + str(s)

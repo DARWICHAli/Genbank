@@ -9,6 +9,11 @@ from ftp_downloader import *
 from parser_class import ParserClass
 from multiprocessing import Pool
 import shutil
+import os
+import ftplib
+import socket
+from ftplib import error_temp
+from time import sleep 
 
 save_pickle = False
 DEBUG = False
@@ -29,9 +34,10 @@ class ThreadClass(QtCore.QThread):
 		self.index = index
 		self.parent = parent
 		self.regions_choice = []
-		self.kingdoms_choice = []
+		self.kingdoms_choice = ['Eukaryota','Archaea','Viruses','Bacteria']
+		self.path_choice =  ""
 		parent.region_signal.connect(self.get_region_choice)
-		parent.kingdom_signal.connect(self.get_kingdom_choice)
+		parent.path_signal.connect(self.get_path_choice)
 		self.isRunning = False
 		self.organism_df = 0
 		self.nb_NC = 0
@@ -66,16 +72,17 @@ class ThreadClass(QtCore.QThread):
 		# About 157421 files to parse in total, we test with the first 10
 		for (index, path, NC_LIST) in self.organism_df.itertuples():
 			for NC in NC_LIST:
-				if(not path.split('/')[2] in self.kingdoms_choice): continue
+				
 				if(nb_parsed==to_parse): break
+				
+				if(path.startswith(self.path_choice)):
+					msg = "Parsing " + str(NC) + ' in: ' + str(path)
+					self.log_signal.emit(msg)
+					print(msg)
+					ParserClass.parse_NC(NC, path, self.regions_choice, self.log_signal)
 
-				msg = "Parsing " + str(NC) + ' in: ' + str(path)
-				self.log_signal.emit(msg)
-				print(msg)
-				ParserClass.parse_NC(NC, path, self.regions_choice, self.log_signal)
-
-				nb_parsed+=1
-				self.progress_signal.emit((self.nb_parsed/self.nb_NC)*100)
+					nb_parsed+=1
+					self.progress_signal.emit((self.nb_parsed/self.nb_NC)*100)
 
 		msg = "Parsing finished in: "
 		self.log_signal.emit(msg)
@@ -92,12 +99,11 @@ class ThreadClass(QtCore.QThread):
 		if(index == 0):
 			self.regions_choice = regions_choice
 
-
-	def get_kingdom_choice(self, kingdoms_choice):
-		self.get_kingdom_choice = []
+	def get_path_choice(self, path_choice):
 		index = self.sender().index
 		if(index == 0):
-			self.kingdoms_choice = kingdoms_choice
+			self.path_choice = path_choice
+
 
 ################################################################################
 ################################################################################
@@ -124,9 +130,7 @@ class ThreadClass(QtCore.QThread):
 				# Extraction of the tree components
 				try :
 					kingdom = parsed_row[1].replace(' ','_').replace('/','_')
-					# we only want the kingdoms that were selected by the user
-					if(kingdom not in self.kingdoms_choice): 
-						continue
+
 					organism = parsed_row[0].replace(' ','_').replace('/','_').replace('[','').replace(']','').replace(':','_').replace('\'','')
 					group = parsed_row[2].replace(' ','_').replace('/','_')
 					subgroup = parsed_row[3].replace(' ','_').replace('/','_')
@@ -240,11 +244,6 @@ class ThreadClass(QtCore.QThread):
 		print(msg)
 		self.log_signal.emit(msg)
 		for i in range(len(organism_df)):
-			# name = organism_df["name"][i].replace(" ", "_")
-			# name = name.replace("[", "_")
-			# name = name.replace("]", "_")
-			# name = name.replace(":", "_")
-			# path = organism_df["path"][i] + name + "/"
 			if not os.path.exists(organism_df["path"][i]):
 				os.makedirs(organism_df["path"][i])
 
@@ -264,7 +263,7 @@ class ThreadClass(QtCore.QThread):
 
 	def stop(self):
 		self.parent.region_signal.disconnect(self.get_region_choice)
-		self.parent.kingdom_signal.disconnect()
+		self.parent.path_signal.disconnect(self.get_path_choice)
 		self.isRunning = False
 		print("Stopping thread...",self.index)
 		msg = "Stopping thread..." + str(self.index)
@@ -278,14 +277,6 @@ class ThreadClass(QtCore.QThread):
 
 
 	def load_tree(self):
-
-		# TO DO: Add a to download array containing only the kingdoms to update instead of updating everything again
-		for f in self.kingdoms_choice:
-			if not os.path.isfile("../GENOME_REPORTS/IDS/" + f + '.ids'):
-				self.download_ftp()
-				self.download_files()
-				self.load_df_from_pickle()
-				return
 
 		if os.path.isdir("../pickle") and os.path.isfile("../pickle/organism_df"):
 			# Initialization
@@ -335,7 +326,6 @@ class ThreadClass(QtCore.QThread):
 		except: pass
 		
 		os.chdir('../GENOME_REPORTS')
-
 		directory = os.getcwd()
 
 		# Pourquoi ce test ? IDS n'a pas été supprimé en supprimant GENOME_REPORTS ?
@@ -343,19 +333,7 @@ class ThreadClass(QtCore.QThread):
 			shutil.remove(os.path.join(directory, "IDS"))
 		os.mkdir(os.path.join(directory, "IDS"))
 
-		files = [("", "overview.txt")]
-
-		for k in self.kingdoms_choice:
-			if k not in ["Eukaryota","Viruses","Archaea","Bacteria","Mito_metazoa","Phages","Plasmids","Samples","Viroids","dsDNA_Viruses"]:
-				self.log_signal.emit("WARNING: Wrong kingdom input {}. Ignored.".format(k))
-				print("skip")
-				continue
-			files.append(("IDS", k + '.ids'))
-
-		if(len(files) == 1):
-			self.log_signal.emit("ERROR: No Kingdom Selected.")
-			print("No kingdom")
-		# Adding destination
+		files = [("", "overview.txt"),("IDS","Eukaryota.ids"),("IDS", "Archaea.ids"), ("IDS", "Bacteria.ids"), ("IDS", "Viruses.ids")]
 		files = [(directory,) + f for f in files]
 
 		msg = "Downloading files..."
@@ -364,3 +342,12 @@ class ThreadClass(QtCore.QThread):
 		print(files)
 		with Pool(5) as p:
 			p.map(download_ftp_file, files)
+
+
+########################################################################################################################
+########################################################################################################################
+
+	def in_path_choice(self, path):
+		path_choice = self.path_choice.split('/')
+		path = path.split('/')
+		

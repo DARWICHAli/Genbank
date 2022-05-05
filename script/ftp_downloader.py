@@ -6,28 +6,8 @@ from time import sleep
 
 def download_ftp_file(arg):
 
-    # msg = "Start Fetch"
-    # print(msg)
-    # self.any_signal.emit(msg) 
-
     dst, dir, file = arg
     GENOME_PATH = "genomes/GENOME_REPORTS"
-
-    # msg = "Logging in to FTP server"
-    # print(msg)
-    # self.any_signal.emit(msg)
-
-    #ftp = ftplib.FTP("ftp.ncbi.nlm.nih.gov")
-    #ftp.login()
-#
-    ## IDs
-    #if len(dir):
-    #    ftp.cwd(GENOME_PATH + "/" + dir)
-    ## Overview
-    #else:
-    #    ftp.cwd(GENOME_PATH)
-
-    
     
     try_count = 0
     ftp = ftplib.FTP("ftp.ncbi.nlm.nih.gov")

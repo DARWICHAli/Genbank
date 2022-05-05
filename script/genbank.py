@@ -8,7 +8,7 @@ import os
 class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 
 	region_signal = QtCore.pyqtSignal(list)
-	kingdom_signal = QtCore.pyqtSignal(list)
+	path_signal = QtCore.pyqtSignal(str)
 	
 	def __init__(self, parent = None, index = 0):
 		super(Genbank, self).__init__(parent)
@@ -23,29 +23,28 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 		self.mainwindow.connect_ui(self)
 		self.parser = ParserClass()
 		self.region_choice = []
-		self.kingdom_choice = []
-		
-		
+		self.path_choice = []
+	
 
 ################################################################################
 ################################################################################
 
-	def get_kingdom_choice(self):
-		selected_kingdoms = []
-		if(self.mainwindow.checkBox_viruses.isChecked()):
-			selected_kingdoms = selected_kingdoms + ["Viruses"]
-		if(self.mainwindow.checkBox_archaea.isChecked()):
-			selected_kingdoms = selected_kingdoms + ["Archaea"]
-		if(self.mainwindow.checkBox_bacteria.isChecked()):
-			selected_kingdoms = selected_kingdoms + ["Bacteria"]
-		if(self.mainwindow.checkBox_eukaryota.isChecked()):
-			selected_kingdoms = selected_kingdoms + ["Eukaryota"]
-		if(len(self.mainwindow.inputKingdom.toPlainText())):
-			selected_kingdoms = selected_kingdoms + [self.mainwindow.inputKingdom.toPlainText()]
+	def get_path_choice(self):
+		self.path_choice = []
+		index = self.mainwindow.treeView.selectedIndexes()[0]
+		path = self.mainwindow.model.filePath(index)
+		path = path.split('/')[::-1]
 
-		self.kingdom_choice = selected_kingdoms
+		for f in path:
+			if(f == "Results"): break
+			self.path_choice.append(f)
+		self.path_choice.append("Results")
+		self.path_choice.append("..")
+		self.path_choice = self.path_choice[::-1]
+		self.path_choice = "/".join(self.path_choice)
 
-
+		print(path)
+		print(self.path_choice)
 
 ################################################################################
 ################################################################################
@@ -157,12 +156,12 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 	def worker(self):
 
 		if( self.isRunning == False):
-
-			self.get_kingdom_choice()
+			
+			self.get_path_choice()
 			self.get_region_choice()
 
-			if not len(self.region_choice) or not len(self.kingdom_choice):
-				self.log("Il faut choisir au moins une région fonctionnelle et une Kingdom!")
+			if not len(self.region_choice):
+				self.log("Il faut choisir au moins une région fonctionnelle!")
 				return
 
 			self.isRunning = True
@@ -172,8 +171,8 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 
 			self.thread[1] = ThreadClass(parent = self, index=1)
 			self.thread[1].start()
+			self.path_signal.emit(self.path_choice)
 			self.region_signal.emit(self.region_choice)
-			self.kingdom_signal.emit(self.kingdom_choice)
 			self.thread[1].log_signal.connect(self.start)
 			self.thread[1].dataframe_result.connect(self.get_result)
 			self.thread[1].progress_signal.connect(self.update_progress_bar)

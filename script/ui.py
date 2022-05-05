@@ -8,6 +8,9 @@ class Ui_MainWindow(object):
         def setupUi(self, MainWindow):
 
                 MainWindow.setObjectName("MainWindow")
+
+
+
                 self.centralwidget = QtWidgets.QWidget(MainWindow)
 
                 sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -139,11 +142,13 @@ class Ui_MainWindow(object):
                 self.model = QFileSystemModel()
                 if not os.path.exists('../Results'):
                         os.mkdir("../Results")
-                self.model.setRootPath("")
+                self.model.setRootPath(QtCore.QDir.currentPath())
+
+                self.proxy_model = QtCore.QSortFilterProxyModel(recursiveFilteringEnabled = True, filterRole = QFileSystemModel.FileNameRole)
+                self.proxy_model.setSourceModel(self.model)
                 
                 # tree View
                 self.treeView = QtWidgets.QTreeView(self.horizontalLayoutWidget_2)
-                
                 self.treeView.setModel(self.model)
                 self.treeView.setRootIndex(self.model.index("../Results"))
                 self.treeView.setObjectName("treeView")
@@ -154,6 +159,7 @@ class Ui_MainWindow(object):
                 self.treeView.hideColumn(2)
                 self.treeView.hideColumn(3)
                 self.treeView.setHeaderHidden(True)
+                self.treeView.setAnimated(True)
                 self.treeView.setColumnWidth(0, 200)
                 self.treeView.setWindowTitle("Results")
                 self.treeView.setStyleSheet("color: rgb(255,255,255);\n" "background-color: rgb(0, 4, 28);")
@@ -228,79 +234,12 @@ class Ui_MainWindow(object):
                 self.inner_menu_container.setSpacing(15)
                 self.inner_menu_container.setObjectName("inner_menu_container")
 
-                # kingdoms
-                self.labelKingdoms = QtWidgets.QLabel(self.horizontalLayoutWidget_2)
-                sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-                sizePolicy.setHorizontalStretch(0)
-                sizePolicy.setVerticalStretch(0)
-                sizePolicy.setHeightForWidth(self.labelKingdoms.sizePolicy().hasHeightForWidth())
-                self.labelKingdoms.setSizePolicy(sizePolicy)
-                self.labelKingdoms.setStyleSheet("\n" "font: 12pt \"Futura\";\n" "color:rgb(255, 255, 255);")
-                self.labelKingdoms.setObjectName("labelKingdoms")
-                self.inner_menu_container.addWidget(self.labelKingdoms)
                 self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
                 self.horizontalLayout_2.setSpacing(0)
                 self.horizontalLayout_2.setObjectName("horizontalLayout_2")
 
-                self.checkBox_eukaryota = QtWidgets.QCheckBox(self.horizontalLayoutWidget_2)
-                self.checkBox_eukaryota.setStyleSheet("color: rgb(255,255,255);\n" )
-                
-                self.checkBox_eukaryota.setChecked(True)
-                self.checkBox_eukaryota.setObjectName("checkBox_eukaryota")
-                self.horizontalLayout_2.addWidget(self.checkBox_eukaryota)
-
-                self.checkBox_bacteria = QtWidgets.QCheckBox(self.horizontalLayoutWidget_2)
-                self.checkBox_bacteria.setStyleSheet("color: rgb(255,255,255);\n" )
-                self.checkBox_bacteria.setChecked(True)
-                self.checkBox_bacteria.setObjectName("checkBox_bacteria")
-                self.horizontalLayout_2.addWidget(self.checkBox_bacteria)
-
-
-                self.checkBox_viruses = QtWidgets.QCheckBox(self.horizontalLayoutWidget_2)
-                self.checkBox_viruses.setStyleSheet("color: rgb(255,255,255);\n" )
-                self.checkBox_viruses.setChecked(True)
-                self.checkBox_viruses.setObjectName("checkBox_viruses")
-                self.horizontalLayout_2.addWidget(self.checkBox_viruses)
-
-
-                self.checkBox_archaea = QtWidgets.QCheckBox(self.horizontalLayoutWidget_2)
-                self.checkBox_archaea.setStyleSheet("color: rgb(255,255,255);\n" )
-                self.checkBox_archaea.setChecked(True)
-                self.checkBox_archaea.setObjectName("checkBox_archaea")
-                self.horizontalLayout_2.addWidget(self.checkBox_archaea)
-
-
                 self.inner_menu_container.addLayout(self.horizontalLayout_2)
 
-                self.container_input_kingdom = QtWidgets.QHBoxLayout()
-                self.container_input_kingdom.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
-                self.container_input_kingdom.setContentsMargins(10, -1, 40, -1)
-                self.container_input_kingdom.setObjectName("container_input_kingdom")
-                self.labelinputKingdom = QtWidgets.QLabel(self.horizontalLayoutWidget_2)
-                sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-                sizePolicy.setHorizontalStretch(0)
-                sizePolicy.setVerticalStretch(0)
-                sizePolicy.setHeightForWidth(self.labelinputKingdom.sizePolicy().hasHeightForWidth())
-                self.labelinputKingdom.setSizePolicy(sizePolicy)
-                self.labelinputKingdom.setObjectName("labelinputKingdom")
-                self.labelinputKingdom.setStyleSheet("font: 9pt; color: rgb(255, 255, 255);")
-                self.container_input_kingdom.addWidget(self.labelinputKingdom)
-                self.inputKingdom = QtWidgets.QTextEdit(self.horizontalLayoutWidget_2)
-                sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-                sizePolicy.setHorizontalStretch(0)
-                sizePolicy.setVerticalStretch(0)
-                sizePolicy.setHeightForWidth(self.inputKingdom.sizePolicy().hasHeightForWidth())
-                self.inputKingdom.setSizePolicy(sizePolicy)
-                self.inputKingdom.setMaximumSize(QtCore.QSize(200, 30))
-                self.inputKingdom.setLayoutDirection(QtCore.Qt.LeftToRight)
-                self.inputKingdom.setStyleSheet("")
-                self.inputKingdom.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-                self.inputKingdom.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-                self.inputKingdom.setObjectName("inputKingdom")
-                self.container_input_kingdom.addWidget(self.inputKingdom)
-                self.container_input_kingdom.setStretch(0, 1)
-                self.container_input_kingdom.setStretch(1, 2)
-                self.inner_menu_container.addLayout(self.container_input_kingdom)
                 self.labelRegions = QtWidgets.QLabel(self.horizontalLayoutWidget_2)
                 sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
                 sizePolicy.setHorizontalStretch(0)
@@ -474,7 +413,6 @@ class Ui_MainWindow(object):
                 self.mainTitle.setObjectName("mainTitle")
                 self.title_container.addWidget(self.mainTitle)
 
-
                 self.horizontalLayoutWidget_2.raise_()
                 self.horizontalLayoutWidget.raise_()
                 MainWindow.setCentralWidget(self.centralwidget)
@@ -492,12 +430,6 @@ class Ui_MainWindow(object):
                 self.labelSupprime.setText(_translate("MainWindow", "Supprimé"))
                 self.buttonStart.setText(_translate("MainWindow", "Start"))
                 self.labelPreferences.setText(_translate("MainWindow", "Préférences"))
-                self.labelKingdoms.setText(_translate("MainWindow", "Kingdoms:"))
-                self.checkBox_eukaryota.setText(_translate("MainWindow", "Eukaryota"))
-                self.checkBox_bacteria.setText(_translate("MainWindow", "Bacteria"))
-                self.checkBox_viruses.setText(_translate("MainWindow", "Viruses"))
-                self.checkBox_archaea.setText(_translate("MainWindow", "Archaea"))
-                self.labelinputKingdom.setText(_translate("MainWindow", "Personnalisé:"))
                 self.labelRegions.setText(_translate("MainWindow", "Régions Fonctionnelles:"))
                 self.checkBox_rrna.setText(_translate("MainWindow", "rRna"))
                 self.checkBox_cds.setText(_translate("MainWindow", "CDS"))
@@ -513,6 +445,18 @@ class Ui_MainWindow(object):
                 self.labelLog.setText(_translate("MainWindow", "Log"))
                 
 
+        @QtCore.pyqtSlot(QtCore.QModelIndex)
+        def on_treeView_clicked(self, index):
+
+                source_index = self.proxy_model.mapToSource(index)
+                indexItem = self.model.index(source_index.row(), 0, source_index.parent())
+
+                fileName = self.model.fileName(indexItem)
+                filePath = self.model.filePath(indexItem)
+
+                print(fileName)
+                print(filePath)
+
         def connect_ui(self, genbank):
                 self.buttonStart.clicked.connect(genbank.worker)
-
+                self.treeView.clicked.connect(genbank.get_path_choice)

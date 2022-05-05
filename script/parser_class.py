@@ -57,6 +57,7 @@ class ParserClass:
         try: 
             file_regions = handle_read.annotations['structured_comment']['Genome-Annotation-Data']['Features Annotated'].split("; ")
         except:
+            print("except region")
             file_regions = regions
             
         visited_regions = [False, False, False, False, False, False, False, False, False, False]
@@ -75,8 +76,8 @@ class ParserClass:
                     selected_regions.append('CDS')
                 intron_is_selected = True
             else:
-                signal.emit('Error : invalid selected option \'{}\''.format(option))
-                print('Error : invalid selected option \'{}\''.format(option))
+                signal.emit('Pass : {} does not contain selected option \'{}\''.format(NC, option))
+                print('Pass : {} does not contain selected option \'{}\''.format(NC, option))
 
         count_complements = 0
         nb_introns = 0
@@ -134,7 +135,7 @@ class ParserClass:
                                     # gestion erreur
                                     except:
                                         continue
-                                    
+
                                 if cds_is_selected:
                                     cds_seq = cls.join(header, handle_read.seq, f.location, signal)[0]
                                     # gestion erreur
@@ -213,7 +214,7 @@ class ParserClass:
         if(nb_introns == 0 and intron_is_selected):
             intron_file.close()
             os.remove(intron_file.name)
-        print("number of introns found: {}".format(nb_introns))
+        #print("number of introns found: {}".format(nb_introns))
         return True
 
     @classmethod
@@ -236,7 +237,7 @@ class ParserClass:
             if (l.start + 1) < last_end:
                 signal.emit("Error : invalid join sequence order")
                 print("Error : invalid join sequence order")
-                return None
+                return (None,0)
             header += ',{}..{}'.format(l.start + 1, l.end)
             if intron:
                 f = FeatureLocation(last_end, l.start+1, strand=isComplement)

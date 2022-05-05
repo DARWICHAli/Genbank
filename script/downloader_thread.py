@@ -158,7 +158,6 @@ class ThreadClass(QtCore.QThread):
 			i += 1
 
 			msg = "Parsing " + str(ids) + "..."
-			self.progress_signal.emit(1)
 			self.log_signal.emit(msg)
 			with open('../GENOME_REPORTS/IDS/' + ids) as f:
 				#n_line = sum(1 for _ in f)
@@ -166,7 +165,6 @@ class ThreadClass(QtCore.QThread):
 					print("ids")
 				for row in f:
 					parsed_row = row.replace('\n', '').split('\t')
-
 					if (parsed_row[1][0:2] != 'NC'): # We need only the NC
 						continue
 					try:
@@ -174,7 +172,7 @@ class ThreadClass(QtCore.QThread):
 						# so that we can put the NC and path in the same index in our dataframe
 						index = organism_names.index(parsed_row[5])
 						found += 1
-					except ValueError:
+					except:
 						# Organism does not exist in overview, we move to next NC
 						found = False
 						#continue

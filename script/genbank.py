@@ -1,5 +1,5 @@
 import shutil
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 from ui import Ui_MainWindow
 from downloader_thread import ThreadClass
 from parser_class import ParserClass
@@ -31,20 +31,34 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 
 	def get_path_choice(self):
 		self.path_choice = []
-		index = self.mainwindow.treeView.selectedIndexes()[0]
-		path = self.mainwindow.model.filePath(index)
-		path = path.split('/')[::-1]
 
-		for f in path:
-			if(f == "Results"): break
-			self.path_choice.append(f)
-		self.path_choice.append("Results")
-		self.path_choice.append("..")
-		self.path_choice = self.path_choice[::-1]
-		self.path_choice = "/".join(self.path_choice)
+		if(self.isRunning):
+			return
 
-		print(path)
-		print(self.path_choice)
+		try:
+			index = self.mainwindow.treeView.selectedIndexes()[0]
+			path = self.mainwindow.model.filePath(index)
+			path = path.split('/')[::-1]
+
+			for f in path:
+				if(f == "Results"): break
+				self.path_choice.append(f)
+			self.path_choice.append("Results")
+			self.path_choice.append("..")
+			self.path_choice = self.path_choice[::-1]
+			self.path_choice = "/".join(self.path_choice)
+		except:
+			self.path_choice = "../Results"
+
+		print("Parsing Started...")
+		parsing_choice = " >> ".join(self.path_choice.split('/')[2:])
+
+		print("Currently organisms to parse: " + parsing_choice)
+
+		self.log_color(255,255,255,255)
+		self.clear_log()
+		self.log("Selected organisms to parse: \n	" + parsing_choice)
+		self.log_color(0, 250, 125, 255)
 
 ################################################################################
 ################################################################################
@@ -106,6 +120,7 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 			self.mainwindow.buttonStart.setStyleSheet("background-color: rgb(0, 250, 125);\n" "color:rgb(0, 4, 38);")
 			self.thread[1].stop()
 			self.isRunning = False
+			
 
 ################################################################################
 ################################################################################
@@ -150,18 +165,22 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 	def update_progress_bar(self, value):
 		index = self.sender().index
 		if index == 1:
-			self.mainwindow.progressBar.setProperty("value", self.mainwindow.progressBar.value() + value)
+			self.mainwindow.progressBar.setProperty("value", self.mainwindow.progressBar.value() + 100/value)
+			self.mainwindow.progressBar.setFormat(str(int(self.mainwindow.progressBar.value()*value/100)) + " / " +str(value) + " NC")
 
 
 	def worker(self):
 
 		if( self.isRunning == False):
-			
+			self.mainwindow.progressBar.setValue(0)
+			self.mainwindow.progressBar.setFormat("")
 			self.get_path_choice()
 			self.get_region_choice()
 
 			if not len(self.region_choice):
-				self.log("Il faut choisir au moins une région fonctionnelle!")
+				self.log_color(255,0,0,255)
+				self.log("Erreur User: Il faut choisir au moins une région fonctionnelle!")
+				self.log_color(0, 250, 125, 255)
 				return
 
 			self.isRunning = True
@@ -178,7 +197,6 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 			self.thread[1].progress_signal.connect(self.update_progress_bar)
 			self.thread[1].time_signal.connect(self.start)
 			self.thread[1].end_signal.connect(self.end)
-			self.mainwindow.logOutput.clear()
 			self.mainwindow.logOutput.insertPlainText('Program Started\n')
 
 		else:
@@ -186,7 +204,12 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 			self.mainwindow.buttonStart.setStyleSheet("background-color: rgb(0, 250, 125);\n" "color:rgb(0, 4, 38);")
 			self.thread[1].stop()
 			self.isRunning = False
-			self.mainwindow.logOutput.clear()
+			self.clear_log()
 			self.mainwindow.logOutput.insertPlainText('Program stopped\n')
 		
 		
+	def log_color(self, r, g, b, a):
+		self.mainwindow.logOutput.setTextColor(QtGui.QColor(r, g, b, a))
+
+	def clear_log(self):
+		self.mainwindow.logOutput.clear()

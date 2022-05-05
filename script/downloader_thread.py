@@ -22,7 +22,7 @@ VERBOSE = False
 
 class ThreadClass(QtCore.QThread):
 	
-	progress_signal = QtCore.pyqtSignal(float)
+	progress_signal = QtCore.pyqtSignal(int)
 	log_signal = QtCore.pyqtSignal(str)
 	dataframe_result = QtCore.pyqtSignal(pd.core.frame.DataFrame)
 	time_signal = QtCore.pyqtSignal(float)
@@ -55,20 +55,22 @@ class ThreadClass(QtCore.QThread):
 		
 		self.load_tree()
 		
-		msg = "Overview and IDs downloaded in "
-		self.log_signal.emit(msg)
+		self.log_signal.emit("Overview and IDs downloaded in: ")
 		self.time_signal.emit(time.time() - start_time)
-
+		
+		# resetting time
 		start_time = time.time()
 
-		msg = "Parsing Started..."
-		print(msg)
-		self.log_signal.emit(msg)
+		print("Parsing Started...")
+		parsing_choice = "->".join(self.path_choice.split('/')[2:])
+		self.log_signal.emit("Parsing of " + parsing_choice + " started...")
 
-		to_parse = 10
-		total = sum(len(n) for n in self.organism_df['NC'])
-		self.nb_NC = to_parse
+		to_parse = 5
+		total = len([path for path in self.organism_df['path'] if path.startswith(self.path_choice)])
+		print(type(total))
+		self.nb_NC = total
 		self.nb_parsed = 0
+		self.parent.mainwindow.progressBar.setFormat("0/"+str(total))
 		# About 157421 files to parse in total, we test with the first 10
 		for (index, path, NC_LIST) in self.organism_df.itertuples():
 			for NC in NC_LIST:
@@ -82,7 +84,7 @@ class ThreadClass(QtCore.QThread):
 					ParserClass.parse_NC(NC, path, self.regions_choice, self.log_signal)
 
 					nb_parsed+=1
-					self.progress_signal.emit((self.nb_parsed/self.nb_NC)*100)
+					self.progress_signal.emit(self.nb_NC)
 
 		msg = "Parsing finished in: "
 		self.log_signal.emit(msg)

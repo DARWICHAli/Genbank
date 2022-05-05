@@ -3,8 +3,10 @@ import time
 import pandas as pd
 import os.path
 import pickle
-from ftp_downloader import ftplib
+from ftp_downloader import *
 from parser_class import ParserClass
+from multiprocessing import Pool
+import shutil
 
 save_pickle = False
 DEBUG = False
@@ -57,15 +59,15 @@ class ThreadClass(QtCore.QThread):
 
 		to_parse = 100
 		total = sum(len(n) for n in self.organism_df['NC'])
-		self.nb_NC = to_parse
+		self.nb_NC = total
 		self.nb_parsed = 0
 		# About 157421 files to parse in total, we test with the first 10
 		for (index, path, NC_LIST) in self.organism_df.itertuples():
 			for NC in NC_LIST:
 				if(not path.split('/')[2] in self.kingdoms_choice): continue
-				if(nb_parsed==to_parse): break
+				#if(nb_parsed==to_parse): break
 
-				msg = "Parsing " + str(NC) + '...\n In: ' + str(path)
+				msg = "Parsing " + str(NC) + ' in: ' + str(path)
 				self.log_signal.emit(msg)
 				print(msg)
 				ParserClass.parse_NC(NC, path, self.regions_choice, self.log_signal)

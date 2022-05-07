@@ -5,7 +5,7 @@ import pickle
 import pandas as pd
 from ftp_downloader import *
 import time
-from parser_functions import parse_NC, bdd_path
+from parser_functions import ParserFunctions, bdd_path
 import threading
 from functools import partial
 from itertools import repeat
@@ -40,6 +40,7 @@ class ParserThread(QtCore.QThread):
 		self.nb_parsed = 0
 		self.current_file = 0
 		self.current_path = ""
+		self.parser = ParserFunctions()
 
 ################################################################################
 ################################################################################
@@ -61,7 +62,7 @@ class ParserThread(QtCore.QThread):
 		self.nb_NC = len(args['NC'])
 		self.progress_signal.emit(self.nb_NC)
 		
-		self.pool.map(partial(parse_NC, region_choice = self.regions_choice, log_signal = self.log_signal, progress_signal = self.progress_signal, organism_df = self.organism_df, mutex = self.mutex, mutex_fetch = self.mutex_fetch), args.itertuples())
+		self.pool.map(partial(self.parser.parse_NC, region_choice = self.regions_choice, log_signal = self.log_signal, progress_signal = self.progress_signal, organism_df = self.organism_df, mutex = self.mutex, mutex_fetch = self.mutex_fetch), args.itertuples())
 
 		# About 157421 files to parse in total, we test with the first 10
 		# for (index_df, organism, path, NC_LIST, file_features) in args.itertuples():
@@ -89,7 +90,11 @@ class ParserThread(QtCore.QThread):
 
 	def stop(self):
 		self.isRunning = False
+		self.parser.set_stop()
 		self.pool.terminate()
+		# print(self.pool.pool_size)
+		# while(len(self.pool)):
+		# 	time.sleep(0.5)
 		print("Stopping thread...",self.index)
 		msg = "Stopping thread..." + str(self.index)
 		self.log_signal.emit(msg)

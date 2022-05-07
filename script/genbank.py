@@ -4,7 +4,6 @@ from threading import Thread
 from PyQt5 import QtWidgets, QtCore, QtGui
 from ui import Ui_MainWindow
 from downloader_thread import DownloaderThread
-from parser_class import ParserClass
 import os
 import pandas as pd
 from parser_thread import ParserThread

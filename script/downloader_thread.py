@@ -6,7 +6,6 @@ import os.path
 from multiprocessing import Pool
 import pickle
 from ftp_downloader import *
-from parser_class import ParserClass
 from multiprocessing import Pool
 import shutil
 import os
@@ -58,6 +57,7 @@ class DownloaderThread(QtCore.QThread):
 		# Parsing of "overview.txt"
 		organism_names = []
 		organism_paths = []
+		
 
 		# Retrieving the information from overview.txt to build the tree
 		with open('../GENOME_REPORTS/overview.txt') as f:
@@ -85,7 +85,7 @@ class DownloaderThread(QtCore.QThread):
 					# to get the right index in dataframe
 					organism_names.append(parsed_row[0])
 
-					organism_paths.append('../Results/' + kingdom +'/' + group +'/' + subgroup +'/' + organism)
+					organism_paths.append('../Results/' + kingdom +'/' + group +'/' + subgroup +'/' + organism +'/')
 
 				except IndexError : pass
 
@@ -100,6 +100,7 @@ class DownloaderThread(QtCore.QThread):
 		#organism_names_ids = [] # we will store the organisms names here
 		organism_paths_dataframe = []	# we will store the organisms paths here
 		organism_NC_dataframe = []	# we will store the NC to parse here
+		organism_names_dataframe = []
 		i = 0
 		found = 0
 		not_found = 0
@@ -149,15 +150,17 @@ class DownloaderThread(QtCore.QThread):
 						try:
 							organism_paths_dataframe.append(organism_paths[index])
 							organism_NC_dataframe.append([parsed_row[1]])
+							organism_names_dataframe.append(organism_names[index].replace(' ','_').replace('/','_').replace('[','').replace(']','').replace(':','_').replace('\'',''))
 						except: pass
 					
 
 		# Store the organisms in pandas DataFrame
 		organism_df = pd.DataFrame({
-					#"name":organism_names_ids,
+					"name":organism_names_dataframe,
 					"path":organism_paths_dataframe,
-					"NC":organism_NC_dataframe})
-		print(organism_df)
+					"NC":organism_NC_dataframe,
+					"features":[ [] for i in organism_paths_dataframe]
+					})
 
 		# Create a pickle file to save the dataframe in local
 		if not os.path.exists("../pickle"):

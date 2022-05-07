@@ -1,12 +1,9 @@
 from PyQt5 import QtCore
 import time
-import shutil
+import pickle
 import pandas as pd
 import os.path
 from ftp_downloader import *
-from parser_class import ParserClass
-import shutil
-import os
 import random
 import string
 import os
@@ -54,23 +51,29 @@ class ParserThread(QtCore.QThread):
 		start_time = time.time()
 
 		print("Parsing Started...")
-		parsing_choice = "->".join(self.path_choice.split('/')[2:])
+		parsing_choice = " >> ".join(self.path_choice.split('/')[2:])
 		self.log_signal.emit("Parsing of " + parsing_choice + " started...")
 
-		total = len([path for path in self.organism_df['path'] if path.startswith(self.path_choice)])
-		print(type(total))
+		total = len([path for path in self.organism_df['path'] if path.startswith(self.path_choice +'/')])
+
 		self.nb_NC = total
 		self.parent.mainwindow.progressBar.setFormat("0/"+str(total)+" NC")
 		# About 157421 files to parse in total, we test with the first 10
-		for (index, path, NC_LIST) in self.organism_df.itertuples():
+		for (index_df, organism, path, NC_LIST, file_features) in self.organism_df.itertuples():
+			i = 1
 			for NC in NC_LIST:
-				if(path.startswith(self.path_choice)):
+				if(path.startswith(self.path_choice + '/')):
 					self.current_path = path
 					msg = "Parsing " + str(NC) + ' in: ' + str(path)
 					self.log_signal.emit(msg)
 					print(msg)
-					self.parse_NC(NC, path, self.regions_choice, self.log_signal)
+					self.parse_NC(index_df, organism, NC, i, path, file_features, self.regions_choice, self.log_signal)
 					self.progress_signal.emit(self.nb_NC)
+					i = i + 1
+
+		# new dataframe with file features added
+		with open("../pickle/organism_df", 'wb') as f:
+			pickle.dump(self.organism_df, f)
 
 		msg = "Parsing finished in: "
 		self.log_signal.emit(msg)
@@ -125,13 +128,37 @@ class ParserThread(QtCore.QThread):
 			return True
 		return False
 
-	def parse_NC(self, NC, path, region_choice, signal):
+	def parse_NC(self, index_df, organism_name, NC, i, path, file_features, region_choice, signal):
 		Entrez.email = ''.join(random.choice(string.ascii_lowercase) for i in range(20)) + '@random.com'
-		handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gbwithparts", retmode="text")
-		# with open("input.gb", "w") as f:
-		#    f.write(handle.read())
-		#    f.close()
 
+		# Premier efetch pour récupérer juste la date.
+		# le read prends prend plus de temps que la partie parsing, donc il faut vérifier la date avant
+		handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gbwithparts", retmode="text", datetype='mdat')
+		handle_date = handle.readline().strip().split(' ')
+		handle_date = handle_date[len(handle_date)-1]
+		NC_modified_init = self.verify_modification_date(path, handle_date)
+		NC_modified = NC_modified_init
+		new_region_choice = []
+
+		for option in region_choice:
+			if(len(file_features) and option not in file_features):
+				continue
+			NC_modified = NC_modified_init
+			filename = path + "{}_{}_{}.{}.txt".format(option, organism_name, NC, i )
+			NC_modified = NC_modified or not os.path.isfile(filename)
+			if(NC_modified):
+				new_region_choice.append(option)
+			else:
+				self.log_signal.emit("Skip: option " + option + " in " + NC + " is up to date.")
+
+		if(not len(new_region_choice)):
+			print("return")
+			return
+
+		region_choice = new_region_choice
+		
+		# deuxieme efectch car on perd les informations du premiers
+		handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gbwithparts", retmode="text")
 		with warnings.catch_warnings(record=True) as w:
 			handle_read = SeqIO.read(handle, "gb")
 			#handle_read = SeqIO.read("test_input.gb", "gb")
@@ -140,9 +167,6 @@ class ParserThread(QtCore.QThread):
 					signal.emit(warning.message)
 					print(warning.message)
 					
-		handle_date = handle_read.annotations['date']
-		NC_modified_init = self.verify_modification_date(path, handle_date)
-		NC_modified = NC_modified_init
 
 		organism = handle_read.annotations['organism']
 		features = handle_read.features
@@ -161,34 +185,40 @@ class ParserThread(QtCore.QThread):
 		intron_filename = ""
 		cds_filename = ""
 		filename = ""
-		
-		
+
+		# we update the dataframe
+		self.organism_df['features'][index_df] = [f for f in file_regions]
+		# if 0 introns found, this will be deleted from the dataframe, so that we don't verify it again in
+		# in the next executions
+		if("CDS" in file_regions):
+			self.organism_df['features'][index_df].append("intron")
+
+		print(region_choice)
 		for option in region_choice:
 			if option in file_regions:
+				print(option)
 				if(option == 'CDS'):
 					cds_is_selected = True
 				selected_regions.append(option)
 			elif option == "intron":
 				if "CDS" not in region_choice:
 					selected_regions.append('CDS')
+				print("intron")
 				intron_is_selected = True
 			else:
 				signal.emit('Pass : {} does not contain selected option \'{}\''.format(NC, option))
 				print('Pass : {} does not contain selected option \'{}\''.format(NC, option))
 		
-		for option in file_regions:
-			if option not in selected_regions:
-				file_regions.remove(option)
-		
+		print(intron_is_selected)
 		visited_regions = [False for i in selected_regions]
-		createdNow = [False for i in selected_regions]
+		print("selection:" + str(selected_regions))
 
 		count_complements = 0
 		nb_introns = 0
 		for f in features:
-			if f.type in file_regions:
+			if f.type in selected_regions:
 				index = selected_regions.index(f.type)
-				NC_modified = NC_modified_init
+
 				if f.location:
 					if(self.manage_errors(f, len(handle_read.seq), signal)):
 						continue
@@ -197,30 +227,14 @@ class ParserThread(QtCore.QThread):
 					cds_seq = ""
 					final_seq = ""
 					header = f.type + ' ' + organism + ' ' + str(handle_read.id)
-
-					ogranism_str = organism.replace(' ', '_').replace('/', '_')
-					ogranism_str = ogranism_str.replace('[', '').replace(']', '').replace(':', '_').replace('\'', '')
+					
 					if f.type == "CDS":
 						if intron_is_selected:
-							intron_filename = path + "/intron_{}_{}.txt".format(ogranism_str, handle_read.id)
-							if(not os.path.isfile(intron_filename)):
-								createdNow[index] = True
-							NC_modified = NC_modified or not os.path.isfile(intron_filename) or createdNow[index]
+							intron_filename = path + "intron_{}_{}.txt".format(organism_name, handle_read.id)
 						if cds_is_selected:
-							cds_filename = path + "/CDS_{}_{}.txt".format(ogranism_str, handle_read.id)
-							if(not os.path.isfile(cds_filename)):
-								createdNow[index] = True
-							NC_modified = NC_modified or not os.path.isfile(cds_filename) or createdNow[index]
+							cds_filename = path + "CDS_{}_{}.txt".format(organism_name, handle_read.id)
 					else:
-						filename = path + "/{}_{}_{}.txt".format(f.type, ogranism_str, handle_read.id)
-						if(not os.path.isfile(filename)):
-							createdNow[index] = True
-						NC_modified = NC_modified or not os.path.isfile(filename) or createdNow[index]
-					
-					if(not NC_modified):
-						self.log_signal.emit("Pass: " + NC + "_" + f.type + " is up to date.")
-						file_regions.remove(f.type)						
-						continue
+						filename = path + "{}_{}_{}.txt".format(f.type, organism_name, handle_read.id)
 
 					index = selected_regions.index(f.type)
 					if (visited_regions[index] == False):
@@ -334,16 +348,20 @@ class ParserThread(QtCore.QThread):
 						result.close()
 
 		if(nb_introns == 0 and intron_is_selected):
+			if("intron" in self.organism_df['features'][index_df]):
+				print("removing intron")
+				self.organism_df['features'][index_df].remove("intron")
 			try:
 				intron_file.close()
-				os.remove(intron_file.name)
+				os.remove(intron_filename)
 			except:
 				try:
-					os.remove(intron_file.name)
+					os.remove(intron_filename)
 				except:
 					pass
+			
 
-		#print("number of introns found: {}".format(nb_introns))
+		print("number of introns found: {}".format(nb_introns))
 		return True
 
 

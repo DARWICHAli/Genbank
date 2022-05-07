@@ -143,9 +143,6 @@ class Ui_MainWindow(object):
                 if not os.path.exists('../Results'):
                         os.mkdir("../Results")
                 self.model.setRootPath(QtCore.QDir.currentPath())
-
-                self.proxy_model = QtCore.QSortFilterProxyModel(recursiveFilteringEnabled = True, filterRole = QFileSystemModel.FileNameRole)
-                self.proxy_model.setSourceModel(self.model)
                 
                 # tree View
                 self.treeView = QtWidgets.QTreeView(self.horizontalLayoutWidget_2)
@@ -192,8 +189,9 @@ class Ui_MainWindow(object):
                 self.buttonStart.setMaximumSize(200,50)
                 sizePolicy.setHeightForWidth(self.buttonStart.sizePolicy().hasHeightForWidth())
                 self.buttonStart.setSizePolicy(sizePolicy)
-                self.buttonStart.setStyleSheet("background-color: rgb(0, 250, 125);\n" "color:rgb(0, 4, 38);")
+                self.buttonStart.setStyleSheet("background-color: rgb(180, 150, 150);\n" "color:rgb(0, 4, 38);")
                 self.buttonStart.setObjectName("buttonStart")
+                self.buttonStart.setEnabled(False)
                 self.buttons_container.addWidget(self.buttonStart)
 
                 # container de gauche (menu et log)
@@ -428,7 +426,7 @@ class Ui_MainWindow(object):
                 self.labelActualise.setText(_translate("MainWindow", "Actualisé"))
                 self.labelCree.setText(_translate("MainWindow", "Créé"))
                 self.labelSupprime.setText(_translate("MainWindow", "Supprimé"))
-                self.buttonStart.setText(_translate("MainWindow", "Start"))
+                self.buttonStart.setText(_translate("MainWindow", "Téléchargement"))
                 self.labelPreferences.setText(_translate("MainWindow", "Préférences"))
                 self.labelRegions.setText(_translate("MainWindow", "Régions Fonctionnelles:"))
                 self.checkBox_rrna.setText(_translate("MainWindow", "rRna"))
@@ -444,18 +442,6 @@ class Ui_MainWindow(object):
                 self.label_inputRegion.setText(_translate("MainWindow", "Personnalisé:"))
                 self.labelLog.setText(_translate("MainWindow", "Log"))
                 
-
-        @QtCore.pyqtSlot(QtCore.QModelIndex)
-        def on_treeView_clicked(self, index):
-
-                source_index = self.proxy_model.mapToSource(index)
-                indexItem = self.model.index(source_index.row(), 0, source_index.parent())
-
-                fileName = self.model.fileName(indexItem)
-                filePath = self.model.filePath(indexItem)
-
-                print(fileName)
-                print(filePath)
 
         def connect_ui(self, genbank):
                 self.buttonStart.clicked.connect(genbank.worker)

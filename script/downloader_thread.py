@@ -20,28 +20,22 @@ DEBUG = False
 VERBOSE = False
 
 
-class ThreadClass(QtCore.QThread):
+class DownloaderThread(QtCore.QThread):
 	
 	progress_signal = QtCore.pyqtSignal(int)
 	log_signal = QtCore.pyqtSignal(str)
 	dataframe_result = QtCore.pyqtSignal(pd.core.frame.DataFrame)
-	time_signal = QtCore.pyqtSignal(float)
 	end_signal = QtCore.pyqtSignal(str)
 	
 
 	def __init__(self, parent=None, index = 0):
-		super(ThreadClass, self).__init__(parent)
+		super(DownloaderThread, self).__init__(parent)
 		self.index = index
 		self.parent = parent
-		self.regions_choice = []
 		self.kingdoms_choice = ['Eukaryota','Archaea','Viruses','Bacteria']
-		self.path_choice =  ""
-		parent.region_signal.connect(self.get_region_choice)
-		parent.path_signal.connect(self.get_path_choice)
 		self.isRunning = False
 		self.organism_df = 0
-		self.nb_NC = 0
-		self.nb_parsed = 0
+
 
 ################################################################################
 ################################################################################
@@ -49,63 +43,13 @@ class ThreadClass(QtCore.QThread):
 
 	def run(self):
 		self.isRunning = True
-		nb_parsed=0
 
-		start_time = time.time()
+		start_time = time.time()		
 		
 		self.load_tree()
-		
-		self.log_signal.emit("Overview and IDs downloaded in: ")
-		self.time_signal.emit(time.time() - start_time)
-		
-		# resetting time
-		start_time = time.time()
 
-		print("Parsing Started...")
-		parsing_choice = "->".join(self.path_choice.split('/')[2:])
-		self.log_signal.emit("Parsing of " + parsing_choice + " started...")
-
-		to_parse = 5
-		total = len([path for path in self.organism_df['path'] if path.startswith(self.path_choice)])
-		print(type(total))
-		self.nb_NC = total
-		self.nb_parsed = 0
-		self.parent.mainwindow.progressBar.setFormat("0/"+str(total))
-		# About 157421 files to parse in total, we test with the first 10
-		for (index, path, NC_LIST) in self.organism_df.itertuples():
-			for NC in NC_LIST:
-				
-				if(nb_parsed==to_parse): break
-				
-				if(path.startswith(self.path_choice)):
-					msg = "Parsing " + str(NC) + ' in: ' + str(path)
-					self.log_signal.emit(msg)
-					print(msg)
-					ParserClass.parse_NC(NC, path, self.regions_choice, self.log_signal)
-
-					nb_parsed+=1
-					self.progress_signal.emit(self.nb_NC)
-
-		msg = "Parsing finished in: "
-		self.log_signal.emit(msg)
-		print(msg)
-		self.time_signal.emit(time.time() - start_time)
-		print(str(time.time() - start_time))
-		self.end_signal.emit("----------- End -----------")
-
-################################################################################
-################################################################################
-
-	def get_region_choice(self, regions_choice):
-		index = self.sender().index
-		if(index == 0):
-			self.regions_choice = regions_choice
-
-	def get_path_choice(self, path_choice):
-		index = self.sender().index
-		if(index == 0):
-			self.path_choice = path_choice
-
+		self.log_signal.emit("Téléchargement de l'arborescence en " + str(time.time() - start_time) + " s.")
+		self.end_signal.emit("Terminé avec succès.")
 
 ################################################################################
 ################################################################################
@@ -264,8 +208,7 @@ class ThreadClass(QtCore.QThread):
 
 
 	def stop(self):
-		self.parent.region_signal.disconnect(self.get_region_choice)
-		self.parent.path_signal.disconnect(self.get_path_choice)
+
 		self.isRunning = False
 		print("Stopping thread...",self.index)
 		msg = "Stopping thread..." + str(self.index)
@@ -349,7 +292,4 @@ class ThreadClass(QtCore.QThread):
 ########################################################################################################################
 ########################################################################################################################
 
-	def in_path_choice(self, path):
-		path_choice = self.path_choice.split('/')
-		path = path.split('/')
 		

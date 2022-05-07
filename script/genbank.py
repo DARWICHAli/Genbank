@@ -1,9 +1,13 @@
+from importlib.resources import path
 import shutil
+from threading import Thread
 from PyQt5 import QtWidgets, QtCore, QtGui
 from ui import Ui_MainWindow
-from downloader_thread import ThreadClass
+from downloader_thread import DownloaderThread
 from parser_class import ParserClass
 import os
+import pandas as pd
+from parser_thread import ParserThread
 
 class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 
@@ -13,7 +17,8 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 	def __init__(self, parent = None, index = 0):
 		super(Genbank, self).__init__(parent)
 		QtWidgets.QMainWindow.__init__(self)
-		self.isRunning = False
+		self.isRunning = True
+		self.parsing = False
 		self.index = index
 		self.MainWindow = QtWidgets.QMainWindow()
 		self.mainwindow = Ui_MainWindow()
@@ -24,7 +29,13 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 		self.parser = ParserClass()
 		self.region_choice = []
 		self.path_choice = []
-	
+
+		self.thread[1] = DownloaderThread(parent = self, index=1)
+		self.thread[1].log_signal.connect(self.log)
+		self.thread[1].dataframe_result.connect(self.get_result)
+		self.thread[1].end_signal.connect(self.end)
+		self.thread[1].start()
+		
 
 ################################################################################
 ################################################################################
@@ -96,18 +107,13 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 ################################################################################
 ################################################################################
 
-
-	def start(self, msg):
-		index = self.sender().index
-		if(index == 1):
-			self.log(str(msg))
-
 	def get_result(self, organism_df):
-		self.log("Organism dataframe received")
-		self.organism_df = organism_df
-		self.mainwindow.buttonStart.setEnabled(True)
-		self.mainwindow.buttonStart.setText("Stop Parsing")
-		self.mainwindow.buttonStart.setStyleSheet("background-color: rgb(100, 20, 15);\n" "color:rgb(255, 255, 255);")
+		index = self.sender().index 
+		if index == 1:
+			self.log("Organism dataframe received")
+			self.organism_df = organism_df
+		
+
 
 ################################################################################
 ################################################################################
@@ -116,11 +122,20 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 		index = self.sender().index
 		if(index == 1):
 			self.log(str(msg))
+			self.mainwindow.buttonStart.setEnabled(True)
 			self.mainwindow.buttonStart.setText("Start Parsing")
 			self.mainwindow.buttonStart.setStyleSheet("background-color: rgb(0, 250, 125);\n" "color:rgb(0, 4, 38);")
 			self.thread[1].stop()
 			self.isRunning = False
-			
+		elif(index == 2):
+			self.log(str(msg))
+			self.mainwindow.buttonStart.setEnabled(True)
+			self.mainwindow.buttonStart.setText("Start Parsing")
+			self.mainwindow.buttonStart.setStyleSheet("background-color: rgb(0, 250, 125);\n" "color:rgb(0, 4, 38);")
+			self.thread[2].stop()
+			self.isRunning = False
+			self.mainwindow.progressBar.setValue(0)
+			self.mainwindow.progressBar.setFormat("0/0")
 
 ################################################################################
 ################################################################################
@@ -164,7 +179,7 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 		
 	def update_progress_bar(self, value):
 		index = self.sender().index
-		if index == 1:
+		if index == 2:
 			self.mainwindow.progressBar.setProperty("value", self.mainwindow.progressBar.value() + 100/value)
 			self.mainwindow.progressBar.setFormat(str(int(self.mainwindow.progressBar.value()*value/100)) + " / " +str(value) + " NC")
 
@@ -184,29 +199,25 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 				return
 
 			self.isRunning = True
-			self.mainwindow.buttonStart.setStyleSheet("background-color: rgb(30, 30, 65);\n" "color:rgb(250, 204, 238);")
-			self.mainwindow.buttonStart.setText("Téléchargement...")
-			self.mainwindow.buttonStart.setEnabled(False)
+			self.thread[2] = ParserThread(parent = self, index=2, organism_df = self.organism_df, path_choice=self.path_choice, regions_choice=self.region_choice)
+			self.thread[2].end_signal.connect(self.end)
+			self.thread[2].log_signal.connect(self.log)
+			self.thread[2].progress_signal.connect(self.update_progress_bar)
+			self.thread[2].start()
 
-			self.thread[1] = ThreadClass(parent = self, index=1)
-			self.thread[1].start()
-			self.path_signal.emit(self.path_choice)
-			self.region_signal.emit(self.region_choice)
-			self.thread[1].log_signal.connect(self.start)
-			self.thread[1].dataframe_result.connect(self.get_result)
-			self.thread[1].progress_signal.connect(self.update_progress_bar)
-			self.thread[1].time_signal.connect(self.start)
-			self.thread[1].end_signal.connect(self.end)
+			self.mainwindow.buttonStart.setText("Stop Parsing")
+			self.mainwindow.buttonStart.setStyleSheet("background-color: rgb(100, 20, 15);\n" "color:rgb(255, 255, 255);")
 			self.mainwindow.logOutput.insertPlainText('Program Started\n')
 
 		else:
 			self.mainwindow.buttonStart.setText("Start Parsing")
 			self.mainwindow.buttonStart.setStyleSheet("background-color: rgb(0, 250, 125);\n" "color:rgb(0, 4, 38);")
-			self.thread[1].stop()
 			self.isRunning = False
 			self.clear_log()
 			self.mainwindow.logOutput.insertPlainText('Program stopped\n')
-		
+			self.thread[2].stop()
+			self.mainwindow.progressBar.setValue(0)
+			self.mainwindow.progressBar.setFormat("0/0")
 		
 	def log_color(self, r, g, b, a):
 		self.mainwindow.logOutput.setTextColor(QtGui.QColor(r, g, b, a))

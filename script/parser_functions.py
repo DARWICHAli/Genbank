@@ -8,25 +8,132 @@ from ftp_downloader import *
 import random
 import string
 import os
-from Bio import SeqIO, Entrez
+from Bio import SeqIO, Entrez, AlignIO
 from Bio.SeqFeature import FeatureLocation
 from datetime import datetime
 import time
 import warnings
+from Bio.SeqIO import AbiIO
+from Bio.SeqIO import AceIO
+from Bio.SeqIO import FastaIO
+from Bio.SeqIO import GckIO
+from Bio.SeqIO import IgIO  # IntelliGenetics or MASE format
+from Bio.SeqIO import InsdcIO  # EMBL and GenBank
+from Bio.SeqIO import NibIO
+from Bio.SeqIO import PdbIO
+from Bio.SeqIO import PhdIO
+from Bio.SeqIO import PirIO
+from Bio.SeqIO import QualityIO  # FastQ and qual files
+from Bio.SeqIO import SeqXmlIO
+from Bio.SeqIO import SffIO
+from Bio.SeqIO import SnapGeneIO
+from Bio.SeqIO import SwissIO
+from Bio.SeqIO import TabIO
+from Bio.SeqIO import TwoBitIO
+from Bio.SeqIO import UniprotIO
+from Bio.SeqIO import XdnaIO
 
 from threading import Thread, Lock
 
 
 stop = False
+count = 0
 bdd_path = "last_opened_paths.txt"
+_FormatToIterator = {
+    "abi": AbiIO.AbiIterator,
+    "abi-trim": AbiIO._AbiTrimIterator,
+    "ace": AceIO.AceIterator,
+    "fasta": FastaIO.FastaIterator,
+    "fasta-2line": FastaIO.FastaTwoLineIterator,
+    "ig": IgIO.IgIterator,
+    "embl": InsdcIO.EmblIterator,
+    "embl-cds": InsdcIO.EmblCdsFeatureIterator,
+    "gb": InsdcIO.GenBankIterator,
+    "gck": GckIO.GckIterator,
+    "genbank": InsdcIO.GenBankIterator,
+    "genbank-cds": InsdcIO.GenBankCdsFeatureIterator,
+    "imgt": InsdcIO.ImgtIterator,
+    "nib": NibIO.NibIterator,
+    "cif-seqres": PdbIO.CifSeqresIterator,
+    "cif-atom": PdbIO.CifAtomIterator,
+    "pdb-atom": PdbIO.PdbAtomIterator,
+    "pdb-seqres": PdbIO.PdbSeqresIterator,
+    "phd": PhdIO.PhdIterator,
+    "pir": PirIO.PirIterator,
+    "fastq": QualityIO.FastqPhredIterator,
+    "fastq-sanger": QualityIO.FastqPhredIterator,
+    "fastq-solexa": QualityIO.FastqSolexaIterator,
+    "fastq-illumina": QualityIO.FastqIlluminaIterator,
+    "qual": QualityIO.QualPhredIterator,
+    "seqxml": SeqXmlIO.SeqXmlIterator,
+    "sff": SffIO.SffIterator,
+    "snapgene": SnapGeneIO.SnapGeneIterator,
+    "sff-trim": SffIO._SffTrimIterator,  # Not sure about this in the long run
+    "swiss": SwissIO.SwissIterator,
+    "tab": TabIO.TabIterator,
+    "twobit": TwoBitIO.TwoBitIterator,
+    "uniprot-xml": UniprotIO.UniprotIterator,
+    "xdna": XdnaIO.XdnaIterator,
+}
 
 class ParserFunctions:
-
-
-    def set_stop(self):
+    def parse(cls, handle, format, mutex, alphabet=None):
         global stop
-        stop = True
+        # Try and give helpful error messages:
+        if not isinstance(format, str):
+            raise TypeError("Need a string for the file format (lower case)")
+        if not format:
+            raise ValueError("Format required (lower case string)")
+        if not format.islower():
+            raise ValueError("Format string '%s' should be lower case" % format)
+        if alphabet is not None:
+            raise ValueError("The alphabet argument is no longer supported")
 
+        iterator_generator = _FormatToIterator.get(format)
+        if iterator_generator:
+            return iterator_generator(handle)
+        if format in AlignIO._FormatToIterator:
+            # Use Bio.AlignIO to read in the alignments
+            for alignment in AlignIO.parse(handle, format):
+                for r in alignment:
+                    if cls.check_stopping(mutex):
+                        return None
+                    return r
+        raise ValueError("Unknown format '%s'" % format)
+
+
+    def read(cls, handle, format, mutex, alphabet=None):
+        iterator = cls.parse(handle, format, mutex, alphabet)
+        if iterator is None:
+            return None
+        try:
+            record = next(iterator)
+        except StopIteration:
+            raise ValueError("No records found in handle") from None
+        try:
+            next(iterator)
+            raise ValueError("More than one record found in handle")
+        except StopIteration:
+            pass
+        return record
+
+    def reinit(self):
+        global stop
+        global count
+        stop = 0
+        count = 0
+
+    def set_stop(self, mutex):
+        global stop
+        mutex.acquire()
+        stop = True
+        mutex.release()
+    def get_count(self, mutex):
+        global count
+        mutex.acquire()
+        true_count = count
+        mutex.release()
+        return true_count
     def write_bdd(self, path, file, mutex):
         mutex.acquire()
         bdd = open(path, "a")
@@ -48,6 +155,13 @@ class ParserFunctions:
         new_bdd.close()
         mutex.release()
 
+    def check_stopping(self, mutex):
+        mutex.acquire()
+        stopping = stop
+        mutex.release()
+        return stopping
+
+
     def manage_errors(self, f, len_seq, log_signal):
         if f.location.start < 0:
             log_signal.emit("Pass: sequence must not start with 0 or less. {}".format(f.location))
@@ -68,17 +182,21 @@ class ParserFunctions:
             return True
         return False
 
-    def parse_NC(self, row_df, region_choice, log_signal, progress_signal, organism_df, mutex, mutex_fetch):
+    def parse_NC(self, row_df, region_choice, log_signal, progress_signal, organism_df, mutex, mutex_fetch, mutex_count, mutex_stop):
+        global count
+        mutex_count.acquire()
+        count = count + 1
+        mutex_count.release()
         i = 0
         global stop
         index_df, organism_name, path, NC_LIST, file_features = row_df
         cp_region_choice = [i for i in region_choice]
         for NC in NC_LIST:
-            print("STOP ??????" + str(stop))
-            if(stop):
+            if(self.check_stopping(mutex_stop)):
+                mutex_count.acquire()
+                count = count - 1
+                mutex_count.release()
                 return
-            if(stop):
-                print("return")
             i+=1
             msg = "Parsing " + str(NC) + ' in: ' + str(path)
             log_signal.emit(msg)
@@ -95,7 +213,11 @@ class ParserFunctions:
             except:
                 print ("Error fetching")
                 mutex_fetch.acquire()
-                time.sleep(5)
+                timer = 0.0
+                while(timer != 5.0):
+                    if self.check_stopping(mutex_stop):
+                        return
+                    timer += 0.1
                 handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gb", retmode="text", datetype='mdat')
                 mutex_fetch.release()
 
@@ -129,13 +251,22 @@ class ParserFunctions:
                 handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gbwithparts", retmode="text", datetype='mdat')
             except:
                 mutex_fetch.acquire()
-                time.sleep(5)
+                timer = 0.0
+                while(timer != 5.0):
+                    if self.check_stopping(mutex_stop):
+                        return
+                    timer += 0.1
                 handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gbwithparts", retmode="text", datetype='mdat')
                 mutex_fetch.release()
 
             with warnings.catch_warnings(record=True) as w:
-                handle_read = SeqIO.read(handle, "gb")
+                handle_read = self.read(handle, "gb", mutex_stop)
                 #handle_read = SeqIO.read("test_input.gb", "gb")
+                if handle_read is None:
+                    mutex_count.acquire()
+                    count = count - 1
+                    mutex_count.release()
+                    return
                 if w:
                     for warning in w:
                         log_signal.emit(warning.message)
@@ -186,6 +317,11 @@ class ParserFunctions:
             count_complements = 0
             nb_introns = 0
             for f in features:
+                if(self.check_stopping(mutex_stop)):
+                    mutex_count.acquire()
+                    count = count - 1
+                    mutex_count.release()
+                    return
                 if f.type in selected_regions:
                     #log_signal.emit(NC + ": Parsing " + f.type)
                     ##print(NC+ ": Parsing " + f.type)
@@ -350,6 +486,9 @@ class ParserFunctions:
                 
             progress_signal.emit(0)
             #print("number of introns found: {}".format(nb_introns))
+        mutex_count.acquire()
+        count = count - 1
+        mutex_count.release()
         return True
 
 

@@ -23,7 +23,9 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 		self.mainwindow = Ui_MainWindow()
 		self.mainwindow.setupUi(self.MainWindow)
 		self.thread={}
-		self.mutex = QtCore.QMutex()
+		self.mutex_log = QtCore.QMutex()
+		self.mutex_progress = QtCore.QMutex()
+		self.mutex_end = QtCore.QMutex()
 		self.mainwindow.connect_ui(self)
 		self.region_choice = []
 		self.path_choice = []
@@ -62,7 +64,7 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 		print("Parsing Started...")
 		parsing_choice = " >> ".join(self.path_choice.split('/')[2:])
 
-		print("Currently organisms to parse: " + parsing_choice)
+		print("Selected organisms to parse: " + parsing_choice)
 
 		self.log_color(255,255,255,255)
 		self.clear_log()
@@ -117,6 +119,8 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 ################################################################################
 
 	def end(self, msg):
+
+		self.mutex_end.lock()
 		index = self.sender().index
 		if(index == 1):
 			self.log(str(msg))
@@ -134,6 +138,8 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 			self.isRunning = False
 			self.mainwindow.progressBar.setValue(0)
 			self.mainwindow.progressBar.setFormat("0/0")
+
+		self.mutex_end.unlock()
 
 ################################################################################
 ################################################################################
@@ -161,7 +167,6 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 
 		self.mainwindow.logOutput.clear()
 		self.mainwindow.progressBar.setValue(0)
-		print("reset")
 
 
 ################################################################################
@@ -169,18 +174,17 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 
 	# Logger
 	def log(self, str):
-		self.mutex.lock()
+		self.mutex_log.lock()
 		self.mainwindow.logOutput.insertPlainText(str + '\n')
 		sb =self.mainwindow.logOutput.verticalScrollBar()
 		sb.setValue(sb.maximum())
-		self.mutex.unlock()
+		self.mutex_log.unlock()
 		
 	def update_progress_bar(self, value):
-		index = self.sender().index
-		if index == 2:
-			self.mainwindow.progressBar.setProperty("value", self.mainwindow.progressBar.value() + 100/value)
-			self.mainwindow.progressBar.setFormat(str(int(self.mainwindow.progressBar.value()*value/100)) + " / " +str(value) + " NC")
-
+		self.mutex_progress.lock()
+		self.mainwindow.progressBar.setProperty("value", self.mainwindow.progressBar.value() + 100/value)
+		self.mainwindow.progressBar.setFormat(str(int(self.mainwindow.progressBar.value()*value/100)) + " / " +str(value) + " NC")
+		self.mutex_progress.unlock()
 
 	def worker(self):
 

@@ -103,7 +103,6 @@ class DownloaderThread(QtCore.QThread):
 		organism_names_dataframe = []
 		i = 0
 		found = 0
-		not_found = 0
 
 		# looping through the kingdoms ids files (viruses.ids, archaea.ids, etc ..)
 		for ids in ids_files:
@@ -287,7 +286,6 @@ class DownloaderThread(QtCore.QThread):
 		msg = "Downloading files..."
 		print(msg)
 		self.log_signal.emit(msg)
-		print(files)
 		with Pool(5) as p:
 			p.map(download_ftp_file, files)
 

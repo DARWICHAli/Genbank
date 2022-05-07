@@ -162,6 +162,7 @@ class Ui_MainWindow(object):
                 self.treeView.setStyleSheet("color: rgb(255,255,255);\n" "background-color: rgb(0, 4, 28);")
                 self.layout_for_tree.addWidget(self.treeView)
                 self.left_container.addLayout(self.layout_for_tree)
+                
 
                 # bar de progression
                 self.progressBar = QtWidgets.QProgressBar(self.horizontalLayoutWidget_2)

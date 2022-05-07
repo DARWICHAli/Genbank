@@ -29,6 +29,7 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 		self.mainwindow.connect_ui(self)
 		self.region_choice = []
 		self.path_choice = []
+		self.nb_NC = 0
 
 		self.thread[1] = DownloaderThread(parent = self, index=1)
 		self.thread[1].log_signal.connect(self.log)
@@ -182,8 +183,11 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 		
 	def update_progress_bar(self, value):
 		self.mutex_progress.lock()
-		self.mainwindow.progressBar.setProperty("value", self.mainwindow.progressBar.value() + 100/value)
-		self.mainwindow.progressBar.setFormat(str(int(self.mainwindow.progressBar.value()*value/100)) + " / " +str(value) + " NC")
+		if value > 0:
+			self.nb_NC = value
+		else:
+			self.mainwindow.progressBar.setProperty("value", self.mainwindow.progressBar.value() + 100./float(self.nb_NC) )
+		self.mainwindow.progressBar.setFormat(str(int(self.mainwindow.progressBar.value()* self.nb_NC/100)) + " / " +str(self.nb_NC) + " NC")
 		self.mutex_progress.unlock()
 
 	def worker(self):

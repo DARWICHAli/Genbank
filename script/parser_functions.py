@@ -1,6 +1,7 @@
 from PyQt5 import QtCore
 import time
 import pickle
+from nbformat import write
 import pandas as pd
 import os.path
 from ftp_downloader import *
@@ -12,17 +13,41 @@ from Bio.SeqFeature import FeatureLocation
 from datetime import datetime
 import time
 import warnings
-import threading
 
+from threading import Thread, Lock
+
+
+bdd_path = "last_opened_paths.txt"
+
+def write_bdd(path, file, mutex):
+    mutex.acquire()
+    bdd = open(path, "a")
+    bdd.writelines(file+'\n')
+    bdd.close()
+    mutex.release()
+
+def copy_bdd(path, filenames, mutex):
+
+    mutex.acquire()
+    bdd = open(path, "r")
+    lines = bdd.readlines()
+    lines = lines.copy()
+    bdd.close()
+    new_bdd = open(path, "w")
+    for l in lines:
+        if l.strip('\n') not in filenames:
+            new_bdd.writelines(l)
+    new_bdd.close()
+    mutex.release()
 
 def manage_errors(f, len_seq, log_signal):
     if f.location.start < 0:
         log_signal.emit("Pass: sequence must not start with 0 or less. {}".format(f.location))
-        print("Pass: sequence must not start with 0 or less. {}".format(f.location))
+        ##print("Pass: sequence must not start with 0 or less. {}".format(f.location))
         return True
     elif f.location.start > len_seq or f.location.end > len_seq:
         log_signal.emit("Pass: sequence borders must be less or equal than total sequence size. {}".format(f.location))
-        print("Pass: sequence borders must be less or equal than total sequence size. {}".format(f.location))
+        ##print("Pass: sequence borders must be less or equal than total sequence size. {}".format(f.location))
         return True
     #elif str(f.location.start)[0] == '<' or str(f.location.end)[0] == '>'\
     #        or str(f.location.start)[0] == '>' or str(f.location.end)[0] == '<':
@@ -31,11 +56,11 @@ def manage_errors(f, len_seq, log_signal):
         int(str(f.location.end))
     except:
         log_signal.emit("Pass: only numerical arguments are accepted for sequence limits. {}".format(f.location))
-        print("Pass: only numerical arguments are accepted for sequence limits. {}".format(f.location))
+        ##print("Pass: only numerical arguments are accepted for sequence limits. {}".format(f.location))
         return True
     return False
 
-def parse_NC(row_df, region_choice, log_signal, organism_df):
+def parse_NC(row_df, region_choice, log_signal, progress_signal, organism_df, mutex, mutex_fetch):
     i = 0
     index_df, organism_name, path, NC_LIST, file_features = row_df
     cp_region_choice = [i for i in region_choice]
@@ -43,17 +68,29 @@ def parse_NC(row_df, region_choice, log_signal, organism_df):
         i+=1
         msg = "Parsing " + str(NC) + ' in: ' + str(path)
         log_signal.emit(msg)
-        print(msg)
+        ##print(msg)
         Entrez.email = ''.join(random.choice(string.ascii_lowercase) for i in range(20)) + '@random.com'
+        Entrez.api_key = 'd190df79af669bbea636278753c3236afa08'
 
         # Premier efetch pour récupérer juste la date.
         # le read prends prend plus de temps que la partie parsing, donc il faut vérifier la date avant
-        handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gbwithparts", retmode="text", datetype='mdat')
+
+
+        try:
+            handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gb", retmode="text", datetype='mdat')
+        except:
+            print ("Error fetching")
+            mutex_fetch.acquire()
+            time.sleep(5)
+            handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gb", retmode="text", datetype='mdat')
+            mutex_fetch.release()
+
         handle_date = handle.readline().strip().split(' ')
         handle_date = handle_date[len(handle_date)-1]
         NC_modified_init = verify_modification_date(path, handle_date)
         NC_modified = NC_modified_init
         new_region_choice = []
+
 
         for option in cp_region_choice:
             if(len(file_features) and option not in file_features):
@@ -70,16 +107,25 @@ def parse_NC(row_df, region_choice, log_signal, organism_df):
             continue
 
         cp_region_choice = new_region_choice
-        
+
+        Entrez.email = ''.join(random.choice(string.ascii_lowercase) for i in range(20)) + '@random.com'
+        Entrez.api_key = '24f75a54c3b96e27fcae236d031f3cfb4909'
         # deuxieme efectch car on perd les informations du premiers
-        handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gbwithparts", retmode="text")
+        try:
+            handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gbwithparts", retmode="text", datetype='mdat')
+        except:
+            mutex_fetch.acquire()
+            time.sleep(5)
+            handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gbwithparts", retmode="text", datetype='mdat')
+            mutex_fetch.release()
+
         with warnings.catch_warnings(record=True) as w:
             handle_read = SeqIO.read(handle, "gb")
             #handle_read = SeqIO.read("test_input.gb", "gb")
             if w:
                 for warning in w:
                     log_signal.emit(warning.message)
-                    print(warning.message)
+                    #print(warning.message)
                     
 
         organism = handle_read.annotations['organism']
@@ -90,7 +136,7 @@ def parse_NC(row_df, region_choice, log_signal, organism_df):
         try:
             file_regions = handle_read.annotations['structured_comment']['Genome-Annotation-Data']['Features Annotated'].split("; ")
         except:
-            print("except region")
+            #print("except region")
             file_regions = regions
         
         selected_regions = []
@@ -107,30 +153,28 @@ def parse_NC(row_df, region_choice, log_signal, organism_df):
         if("CDS" in file_regions):
             organism_df['features'][index_df].append("intron")
 
-        print(region_choice)
+        #print(region_choice)
         for option in cp_region_choice:
             if option in file_regions:
-                print(option)
                 if(option == 'CDS'):
                     cds_is_selected = True
                 selected_regions.append(option)
             elif option == "intron":
                 if "CDS" not in cp_region_choice:
                     selected_regions.append('CDS')
-                print("intron")
                 intron_is_selected = True
             else:
                 log_signal.emit('Pass : {} does not contain selected option \'{}\''.format(NC, option))
-                print('Pass : {} does not contain selected option \'{}\''.format(NC, option))
+                #print('Pass : {} does not contain selected option \'{}\''.format(NC, option))
         
-        print(intron_is_selected)
         visited_regions = [False for i in selected_regions]
-        print("selection:" + str(selected_regions))
 
         count_complements = 0
         nb_introns = 0
         for f in features:
             if f.type in selected_regions:
+                #log_signal.emit(NC + ": Parsing " + f.type)
+                ##print(NC+ ": Parsing " + f.type)
                 index = selected_regions.index(f.type)
 
                 if f.location:
@@ -140,7 +184,7 @@ def parse_NC(row_df, region_choice, log_signal, organism_df):
                     intron_seq = ""
                     cds_seq = ""
                     final_seq = ""
-                    header = f.type + ' ' + organism + ' ' + str(handle_read.id)
+                    header = f.type + ' ' + organism + ' ' + str(handle_read.id)+':'
                     
                     if f.type == "CDS":
                         if intron_is_selected:
@@ -162,13 +206,20 @@ def parse_NC(row_df, region_choice, log_signal, organism_df):
                                 os.remove(filename)
                         except:
                             pass
-
+                    
+                    
                     if f.type == "CDS":
                         if intron_is_selected:
+                            if(visited_regions[index] == False):
+                                write_bdd(bdd_path, intron_filename, mutex)
                             intron_file = open(intron_filename, "a")
                         if cds_is_selected:
+                            if(visited_regions[index] == False):
+                                write_bdd(bdd_path, cds_filename, mutex)
                             cds_file = open(cds_filename, "a")
                     else:
+                        if(visited_regions[index] == False):
+                            write_bdd(bdd_path, filename, mutex)
                         result = open(filename, "a")
 
                     visited_regions[index] = True
@@ -241,29 +292,38 @@ def parse_NC(row_df, region_choice, log_signal, organism_df):
 
                     elif f.location.strand == 0:
                         log_signal.emit('Error : noisy strand')
-                        print('Error : noisy strand')
+                        #print('Error : noisy strand')
                         continue
 
                     else:
                         log_signal.emit('Error : cannot join complementory and normal strands')
-                        print('Error : cannot join complementory and normal strands')
+                        #print('Error : cannot join complementory and normal strands')
+
+                    file_names = []
 
                     if f.type == "CDS":
                         if intron_is_selected:
                             if intron_seq:
                                 intron_file.writelines(intron_seq + '\n')
                             intron_file.close()
+                            file_names.append(intron_filename)
+
                         if cds_is_selected:
                             if cds_seq:
                                 cds_file.writelines(cds_seq + '\n')
                             cds_file.close()
+                            file_names.append(cds_filename)
+                            
                     elif final_seq:
                         result.writelines(final_seq + '\n')
                         result.close()
+                        file_names.append(filename)
+
+                    copy_bdd(bdd_path, file_names, mutex)
 
         if(nb_introns == 0 and intron_is_selected):
+            # we don't want to parse intron from this NC ever again!!!! (unless you redownload the reports)
             if("intron" in organism_df['features'][index_df]):
-                print("removing intron")
                 organism_df['features'][index_df].remove("intron")
             try:
                 intron_file.close()
@@ -274,8 +334,8 @@ def parse_NC(row_df, region_choice, log_signal, organism_df):
                 except:
                     pass
             
-        # progress_signal.emit(1)
-        print("number of introns found: {}".format(nb_introns))
+        progress_signal.emit(0)
+        #print("number of introns found: {}".format(nb_introns))
     return True
 
 
@@ -299,7 +359,7 @@ def join(header, sequence, location, log_signal, intron=False):
     for l in (location.parts[::isComplement])[1:]:
         if (l.start + 1) < last_end:
             log_signal.emit("Error : invalid join sequence order")
-            print("Error : invalid join sequence order")
+            #print("Error : invalid join sequence order")
             return (None,0)
         header += ',{}..{}'.format(l.start + 1, l.end)
         if intron:

@@ -5,7 +5,7 @@ import pickle
 import pandas as pd
 from ftp_downloader import *
 import time
-from parser_functions import parse_NC
+from parser_functions import parse_NC, bdd_path
 import threading
 from functools import partial
 from itertools import repeat
@@ -14,6 +14,8 @@ from multiprocessing.pool import ThreadPool as Pool
 save_pickle = False
 DEBUG = False
 VERBOSE = False
+
+from threading import Thread, Lock
 
 
 class ParserThread(QtCore.QThread):
@@ -32,7 +34,8 @@ class ParserThread(QtCore.QThread):
 		self.path_choice =  path_choice
 		self.organism_df = organism_df
 		self.isRunning = False
-		
+		self.mutex = Lock()
+		self.mutex_fetch = Lock()
 		self.nb_NC = 0
 		self.nb_parsed = 0
 		self.current_file = 0
@@ -52,13 +55,13 @@ class ParserThread(QtCore.QThread):
 		parsing_choice = " >> ".join(self.path_choice.split('/')[2:])
 		self.log_signal.emit("Parsing of " + parsing_choice + " started...")
 
-		
+		self.pool=Pool()
+
 		args =  self.organism_df.loc[self.organism_df['path'].str.startswith(self.path_choice + '/')]
 		self.nb_NC = len(args['NC'])
-		self.parent.mainwindow.progressBar.setFormat("0/"+str(self.nb_NC)+" NC")
-
-		with Pool() as pool:
-			pool.map(partial(parse_NC, region_choice = self.regions_choice, log_signal = self.log_signal, organism_df = self.organism_df), args.itertuples())
+		self.progress_signal.emit(self.nb_NC)
+		
+		self.pool.map(partial(parse_NC, region_choice = self.regions_choice, log_signal = self.log_signal, progress_signal = self.progress_signal, organism_df = self.organism_df, mutex = self.mutex, mutex_fetch = self.mutex_fetch), args.itertuples())
 
 		# About 157421 files to parse in total, we test with the first 10
 		# for (index_df, organism, path, NC_LIST, file_features) in args.itertuples():
@@ -66,15 +69,15 @@ class ParserThread(QtCore.QThread):
 		# 	parse_NC(index_df, organism, path, NC_LIST, file_features, self.regions_choice, self.log_signal, self.organism_df)
 		# 	self.progress_signal.emit(self.nb_NC)
 
-		
-
 		# new dataframe with file features added
 		with open("../pickle/organism_df", 'wb') as f:
 			pickle.dump(self.organism_df, f)
 
+		try: os.remove(bdd_path)
+		except: pass
+
 		msg = "Parsing finished in: "
 		self.log_signal.emit(msg)
-		print(msg)
 		self.log_signal.emit(str(time.time() - start_time))
 		print(str(time.time() - start_time))
 		self.end_signal.emit("----------- End -----------")
@@ -86,6 +89,7 @@ class ParserThread(QtCore.QThread):
 
 	def stop(self):
 		self.isRunning = False
+		self.pool.terminate()
 		print("Stopping thread...",self.index)
 		msg = "Stopping thread..." + str(self.index)
 		self.log_signal.emit(msg)

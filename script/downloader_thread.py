@@ -13,6 +13,7 @@ import ftplib
 import socket
 from ftplib import error_temp
 from time import sleep 
+from parser_thread import bdd_path
 
 save_pickle = False
 DEBUG = False
@@ -45,6 +46,7 @@ class DownloaderThread(QtCore.QThread):
 
 		start_time = time.time()		
 		
+		self.remove_ill_terminated()
 		self.load_tree()
 
 		self.log_signal.emit("Téléchargement de l'arborescence en " + str(time.time() - start_time) + " s.")
@@ -52,6 +54,19 @@ class DownloaderThread(QtCore.QThread):
 
 ################################################################################
 ################################################################################
+
+	def remove_ill_terminated(self):
+		try:
+			bdd = open(bdd_path,"r")
+			lines = bdd.readlines()
+			bdd.close()
+			for l in lines:
+				try:
+					os.remove(l.strip('\n'))
+				except: pass
+			try: os.remove(bdd_path)
+			except: pass
+		except: pass
 
 	def download_files(self):
 		# Parsing of "overview.txt"

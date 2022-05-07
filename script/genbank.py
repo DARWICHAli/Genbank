@@ -25,7 +25,6 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 		self.thread={}
 		self.mutex = QtCore.QMutex()
 		self.mainwindow.connect_ui(self)
-		self.parser = ParserClass()
 		self.region_choice = []
 		self.path_choice = []
 

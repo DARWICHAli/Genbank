@@ -357,6 +357,7 @@ class ParserFunctions:
                                 if(visited_regions[index] == False):
                                     self.write_bdd(bdd_path, intron_filename, mutex)
                                 intron_file = open(intron_filename, "a")
+                                print("intron created")
                             if cds_is_selected:
                                 if(visited_regions[index] == False):
                                     self.write_bdd(bdd_path, cds_filename, mutex)

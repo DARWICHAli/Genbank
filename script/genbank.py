@@ -84,7 +84,13 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 		self.clear_log()
 		self.log("Selected organisms to parse:", white)
 		self.log("	" + parsing_choice, green)
-		parsing_choice = ("\n >> ".join(self.path_choice.split('/')[2:])).upper()
+		parsing_choice = self.path_choice.split('/')[2:]
+
+		if(len(parsing_choice) == 4 and len(parsing_choice[len(parsing_choice)-1]) > 30):
+			parsing_choice[len(parsing_choice)-1] = " ".join(parsing_choice[len(parsing_choice)-1].split("_")[0:2])
+
+		parsing_choice = "\n >> ".join(parsing_choice).upper().replace("_"," ")
+
 		self.quickInfo("Organismes selectionnés:\n" + parsing_choice, green )
 
 ################################################################################

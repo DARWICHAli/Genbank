@@ -80,12 +80,12 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 			self.path_choice = "../Results"
 
 		parsing_choice = (" >> ".join(self.path_choice.split('/')[2:])).upper()
-
-		print("Selected organisms to parse: " + parsing_choice)
-
+		
 		self.clear_log()
 		self.log("Selected organisms to parse:", white)
 		self.log("	" + parsing_choice, green)
+		parsing_choice = ("\n >> ".join(self.path_choice.split('/')[2:])).upper()
+		self.quickInfo("Organismes selectionnés:\n" + parsing_choice, green )
 
 ################################################################################
 ################################################################################
@@ -163,34 +163,6 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 ################################################################################
 ################################################################################
 
-
-	def reset(self):
-
-		if os.getcwd().endswith("script"):
-				os.chdir('../')
-		try:
-			if os.getcwd().endswith("GENOME_REPORTS"):
-				os.chdir('../')
-			shutil.rmtree('./GENOME_REPORTS')
-		except: print("cannot delete GENOME_REPORTS")
-		try:
-			if os.getcwd().endswith("pickle"):
-				os.chdir('../')
-			shutil.rmtree('./pickle')
-		except: print("cannot delete pickle")
-		try:
-			if os.getcwd().endswith("Results"):
-				os.chdir('../')
-			shutil.rmtree('./Results')
-		except: print("cannot delete ../Results")
-
-		self.mainwindow.logOutput.clear()
-		self.mainwindow.progressBar.setValue(0)
-
-
-################################################################################
-################################################################################
-
 	# Logger
 	def log(self, str, color):
 		self.mutex_log.lock()
@@ -234,9 +206,11 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 				return
 
 			if(self.path_choice == "../Results"):
-				self.log("Parsing de toutes les kingdoms...", white)
-
-			self.quickInfo("", white)
+				self.log("Parsing de toutes les kingdoms...", green)
+				self.quickInfo("Parsing de toutes les kingdoms en cours...", green)
+			else:
+				parsing_choice = ("\n >> ".join(self.path_choice.split('/')[2:])).upper()
+				self.quickInfo("Parsing de " + parsing_choice + " en cours...", green)
 
 			self.isRunning = True
 			self.thread[2] = ParserThread(parent = self, index=2, organism_df = self.organism_df, path_choice=self.path_choice, regions_choice=self.region_choice)
@@ -266,13 +240,10 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 		except: pass
 
 	def quick_info_color(self, color):
-		#try:
 		color_str = "color:rgb(" + str(color[0]) + "," + str(color[1]) + "," + str(color[2]) + ")"
 		style = "font: 8.5pt Futura;\n background-color: rgb(0, 4, 38);\n" + color_str + ";"
 		self.mainwindow.quickInfo.setStyleSheet( style )
-		# except: 
-		# 	print('pass')
-		# 	pass
+
 
 	def clear_log(self):
 		self.mainwindow.logOutput.clear()

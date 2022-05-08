@@ -132,7 +132,7 @@ class ParserFunctions:
         mutex.acquire()
         stop = True
         mutex.release()
-        
+
     def get_count(self, mutex):
         global count
         mutex.acquire()
@@ -171,20 +171,16 @@ class ParserFunctions:
     def manage_errors(self, f, len_seq, log_signal):
         if f.location.start < 0:
             log_signal.emit("Pass: sequence must not start with 0 or less. {}".format(f.location), purple)
-            ##print("Pass: sequence must not start with 0 or less. {}".format(f.location))
             return True
         elif f.location.start > len_seq or f.location.end > len_seq:
             log_signal.emit("Pass: sequence borders must be less or equal than total sequence size. {}".format(f.location), purple)
-            ##print("Pass: sequence borders must be less or equal than total sequence size. {}".format(f.location))
             return True
-        #elif str(f.location.start)[0] == '<' or str(f.location.end)[0] == '>'\
-        #        or str(f.location.start)[0] == '>' or str(f.location.end)[0] == '<':
+
         try:
             int(str(f.location.start))
             int(str(f.location.end))
         except:
             log_signal.emit("Pass: only numerical arguments are accepted for sequence limits. {}".format(f.location), purple)
-            ##print("Pass: only numerical arguments are accepted for sequence limits. {}".format(f.location))
             return True
         return False
 
@@ -206,18 +202,16 @@ class ParserFunctions:
             i+=1
             msg = "Parsing " + str(NC) + ' in: ' + str(path)
             log_signal.emit(msg, white)
-            ##print(msg)
             Entrez.email = ''.join(random.choice(string.ascii_lowercase) for i in range(20)) + '@random.com'
             Entrez.api_key = 'd190df79af669bbea636278753c3236afa08'
 
             # Premier efetch pour récupérer juste la date.
             # le read prends prend plus de temps que la partie parsing, donc il faut vérifier la date avant
 
-
+            # gestion timeout
             try:
                 handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gb", retmode="text", datetype='mdat')
             except:
-                print ("Error fetching")
                 mutex_fetch.acquire()
                 timer = 0.0
                 while(timer != 5.0):
@@ -276,7 +270,6 @@ class ParserFunctions:
                 if w:
                     for warning in w:
                         log_signal.emit(warning.message, purple)
-                        #print(warning.message)
                         
 
             organism = handle_read.annotations['organism']
@@ -287,7 +280,6 @@ class ParserFunctions:
             try:
                 file_regions = handle_read.annotations['structured_comment']['Genome-Annotation-Data']['Features Annotated'].split("; ")
             except:
-                #print("except region")
                 file_regions = regions
             
             selected_regions = []
@@ -304,7 +296,6 @@ class ParserFunctions:
             if("CDS" in file_regions):
                 organism_df['features'][index_df].append("intron")
 
-            #print(region_choice)
             for option in cp_region_choice:
                 if option in file_regions:
                     if(option == 'CDS'):
@@ -316,7 +307,6 @@ class ParserFunctions:
                     intron_is_selected = True
                 else:
                     log_signal.emit('Pass : {} does not contain selected option \'{}\''.format(NC, option), purple)
-                    #print('Pass : {} does not contain selected option \'{}\''.format(NC, option))
             
             visited_regions = [False for i in selected_regions]
 
@@ -329,8 +319,6 @@ class ParserFunctions:
                     mutex_count.release()
                     return
                 if f.type in selected_regions:
-                    #log_signal.emit(NC + ": Parsing " + f.type)
-                    ##print(NC+ ": Parsing " + f.type)
                     index = selected_regions.index(f.type)
 
                     if f.location:
@@ -448,12 +436,10 @@ class ParserFunctions:
 
                         elif f.location.strand == 0:
                             log_signal.emit('Pass ' + NC + ': noisy strand', purple)
-                            #print('Error : noisy strand')
                             continue
 
                         else:
                             log_signal.emit('Pass ' + NC + ': cannot join complementory and normal strands', purple)
-                            #print('Error : cannot join complementory and normal strands')
 
                         file_names = []
 
@@ -491,7 +477,6 @@ class ParserFunctions:
                 
             progress_signal.emit(0)
             log_signal.emit("Parsing of " + NC + " done successfully.", green)
-            #print("number of introns found: {}".format(nb_introns))
         mutex_count.acquire()
         count = count - 1
         mutex_count.release()
@@ -518,7 +503,6 @@ class ParserFunctions:
         for l in (location.parts[::isComplement])[1:]:
             if (l.start + 1) <= last_end:
                 log_signal.emit("Pass: invalid join sequence order", purple)
-                #print("Error : invalid join sequence order")
                 return (None,0)
             header += ',{}..{}'.format(l.start + 1, l.end)
             if intron:

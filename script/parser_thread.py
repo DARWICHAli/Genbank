@@ -58,7 +58,6 @@ class ParserThread(QtCore.QThread):
 		# resetting time
 		start_time = time.time()
 
-		print("Parsing Démarré.")
 		parsing_choice = " >> ".join(self.path_choice.split('/')[2:])
 		self.log_signal.emit("PARSING des " + parsing_choice + " ...", [255,255,255,255])
 
@@ -78,9 +77,12 @@ class ParserThread(QtCore.QThread):
 		except: pass
 
 		msg = "Parsing terminée en: "
-		self.log_signal.emit(msg, [0,255,0,255])
-		self.log_signal.emit(str(round(time.time() - start_time,3)), [0,255,0,255])
-		print(str(time.time() - start_time))
+		self.log_signal.emit(msg, green)
+		self.log_signal.emit(str(round(time.time() - start_time,3)), green)
+
+		if VERBOSE:
+			print(str(time.time() - start_time))
+
 		self.end_signal.emit("----------- FIN -----------")
 
 
@@ -96,7 +98,7 @@ class ParserThread(QtCore.QThread):
 			print("Il reste {} thread".format(self.parser.get_count(self.mutex_count)))
 			time.sleep(2)
 
-		self.quick_info_signal.emit("Threads Terminées.", white)
+		self.quick_info_signal.emit("Threads Terminées.", green)
 		print("Stopping thread...",self.index)
 		msg = "Thread " + str(self.index) + " terminée"
 		self.log_signal.emit(msg, white)

@@ -35,6 +35,10 @@ from Bio.SeqIO import XdnaIO
 
 from threading import Thread, Lock
 
+green = [0,255,0,255]
+white = [255,255,255,255]
+purple = [255,0,255,255] 
+red = [255,0,0,255] 
 
 stop = False
 count = 0
@@ -128,12 +132,14 @@ class ParserFunctions:
         mutex.acquire()
         stop = True
         mutex.release()
+        
     def get_count(self, mutex):
         global count
         mutex.acquire()
         true_count = count
         mutex.release()
         return true_count
+
     def write_bdd(self, path, file, mutex):
         mutex.acquire()
         bdd = open(path, "a")
@@ -164,11 +170,11 @@ class ParserFunctions:
 
     def manage_errors(self, f, len_seq, log_signal):
         if f.location.start < 0:
-            log_signal.emit("Pass: sequence must not start with 0 or less. {}".format(f.location))
+            log_signal.emit("Pass: sequence must not start with 0 or less. {}".format(f.location), purple)
             ##print("Pass: sequence must not start with 0 or less. {}".format(f.location))
             return True
         elif f.location.start > len_seq or f.location.end > len_seq:
-            log_signal.emit("Pass: sequence borders must be less or equal than total sequence size. {}".format(f.location))
+            log_signal.emit("Pass: sequence borders must be less or equal than total sequence size. {}".format(f.location), purple)
             ##print("Pass: sequence borders must be less or equal than total sequence size. {}".format(f.location))
             return True
         #elif str(f.location.start)[0] == '<' or str(f.location.end)[0] == '>'\
@@ -177,7 +183,7 @@ class ParserFunctions:
             int(str(f.location.start))
             int(str(f.location.end))
         except:
-            log_signal.emit("Pass: only numerical arguments are accepted for sequence limits. {}".format(f.location))
+            log_signal.emit("Pass: only numerical arguments are accepted for sequence limits. {}".format(f.location), purple)
             ##print("Pass: only numerical arguments are accepted for sequence limits. {}".format(f.location))
             return True
         return False
@@ -199,7 +205,7 @@ class ParserFunctions:
                 return
             i+=1
             msg = "Parsing " + str(NC) + ' in: ' + str(path)
-            log_signal.emit(msg)
+            log_signal.emit(msg, white)
             ##print(msg)
             Entrez.email = ''.join(random.choice(string.ascii_lowercase) for i in range(20)) + '@random.com'
             Entrez.api_key = 'd190df79af669bbea636278753c3236afa08'
@@ -237,7 +243,7 @@ class ParserFunctions:
                 if(NC_modified):
                     new_region_choice.append(option)
                 else:
-                    log_signal.emit("Skip: option " + option + " in " + NC + " is up to date.")
+                    log_signal.emit("Skip: option " + option + " in " + NC + " is up to date.", purple)
 
             if(not len(new_region_choice)):
                 continue
@@ -269,7 +275,7 @@ class ParserFunctions:
                     return
                 if w:
                     for warning in w:
-                        log_signal.emit(warning.message)
+                        log_signal.emit(warning.message, purple)
                         #print(warning.message)
                         
 
@@ -309,7 +315,7 @@ class ParserFunctions:
                         selected_regions.append('CDS')
                     intron_is_selected = True
                 else:
-                    log_signal.emit('Pass : {} does not contain selected option \'{}\''.format(NC, option))
+                    log_signal.emit('Pass : {} does not contain selected option \'{}\''.format(NC, option), purple)
                     #print('Pass : {} does not contain selected option \'{}\''.format(NC, option))
             
             visited_regions = [False for i in selected_regions]
@@ -441,12 +447,12 @@ class ParserFunctions:
                                     final_seq = header + '\n' + fc.extract(handle_read.seq)
 
                         elif f.location.strand == 0:
-                            log_signal.emit('Error : noisy strand')
+                            log_signal.emit('Pass ' + NC + ': noisy strand', purple)
                             #print('Error : noisy strand')
                             continue
 
                         else:
-                            log_signal.emit('Error : cannot join complementory and normal strands')
+                            log_signal.emit('Pass ' + NC + ': cannot join complementory and normal strands', purple)
                             #print('Error : cannot join complementory and normal strands')
 
                         file_names = []
@@ -470,7 +476,6 @@ class ParserFunctions:
                             file_names.append(filename)
 
                         self.copy_bdd(bdd_path, file_names, mutex)
-
             if(nb_introns == 0 and intron_is_selected):
                 # we don't want to parse intron from this NC ever again!!!! (unless you redownload the reports)
                 if("intron" in organism_df['features'][index_df]):
@@ -485,6 +490,7 @@ class ParserFunctions:
                         pass
                 
             progress_signal.emit(0)
+            log_signal.emit("Parsing of " + NC + " done successfully.", green)
             #print("number of introns found: {}".format(nb_introns))
         mutex_count.acquire()
         count = count - 1
@@ -510,8 +516,8 @@ class ParserFunctions:
 
         nb_introns = 0
         for l in (location.parts[::isComplement])[1:]:
-            if (l.start + 1) < last_end:
-                log_signal.emit("Error : invalid join sequence order")
+            if (l.start + 1) <= last_end:
+                log_signal.emit("Pass: invalid join sequence order", purple)
                 #print("Error : invalid join sequence order")
                 return (None,0)
             header += ',{}..{}'.format(l.start + 1, l.end)

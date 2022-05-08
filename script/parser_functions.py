@@ -254,6 +254,9 @@ class ParserFunctions:
                 timer = 0.0
                 while(timer != 5.0):
                     if self.check_stopping(mutex_stop):
+                        mutex_count.acquire()
+                        count = count - 1
+                        mutex_count.release()
                         return
                     timer += 0.1
                 handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gbwithparts", retmode="text", datetype='mdat')
@@ -308,6 +311,10 @@ class ParserFunctions:
                 else:
                     log_signal.emit('Pass : {} does not contain selected option \'{}\''.format(NC, option), purple)
             
+            if(not len(selected_regions)):
+                log_signal.emit('Pass : {} does not contain any of the selected options \'{}\''.format(NC, option), purple)
+                continue
+
             visited_regions = [False for i in selected_regions]
 
             count_complements = 0
@@ -357,7 +364,6 @@ class ParserFunctions:
                                 if(visited_regions[index] == False):
                                     self.write_bdd(bdd_path, intron_filename, mutex)
                                 intron_file = open(intron_filename, "a")
-                                print("intron created")
                             if cds_is_selected:
                                 if(visited_regions[index] == False):
                                     self.write_bdd(bdd_path, cds_filename, mutex)

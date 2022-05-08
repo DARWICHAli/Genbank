@@ -447,7 +447,7 @@ class Ui_MainWindow(object):
 
                 self.timer = QtWidgets.QTextEdit()
                 self.timer.setReadOnly(True)
-                self.timer.setStyleSheet("font: 8.5pt Futura;\n background-color: rgb(0, 4, 38);\n color:rgb(0, 250, 125);")
+                self.timer.setStyleSheet("font: 8.5pt Futura;\n background-color: rgb(0, 4, 38);\n color:rgb(0, 250, 125); border-color: rgb(0, 4, 38);")
                 self.title_container.addWidget(self.timer)
                 self.timer.setText("Temps écoulé: 00:00:00")
                 self.timer.setAlignment(QtCore.Qt.AlignCenter)

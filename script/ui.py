@@ -1,8 +1,14 @@
+from re import S
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QFileSystemModel
 from PyQt5.QtGui import QPixmap
 import PyQt5
 import os
+
+green = [0,255,0,255]
+white = [255,255,255,255]
+purple = [255,0,255,255]
+red = [255,0,0,255]
 
 class Ui_MainWindow(object):
         def setupUi(self, MainWindow):
@@ -32,7 +38,7 @@ class Ui_MainWindow(object):
                 # left container (partie arborescence)
                 self.left_container = QtWidgets.QVBoxLayout()
                 self.left_container.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
-                self.left_container.setContentsMargins(0, 100, 0, 50)
+                self.left_container.setContentsMargins(0, 100, 0, 10)
                 self.left_container.setSpacing(10)
                 self.left_container.setObjectName("left_container")
 
@@ -58,7 +64,7 @@ class Ui_MainWindow(object):
                 self.labelArborescence.setAlignment(QtCore.Qt.AlignCenter)
                 self.labelArborescence.setObjectName("labelArborescence")
                 self.left_container.addWidget(self.labelArborescence)
-                
+
                 # container légende ( code couleurs arborescence )
                 self.legende_container = QtWidgets.QHBoxLayout()
                 self.legende_container.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
@@ -68,8 +74,8 @@ class Ui_MainWindow(object):
                 self.graphicViewActualise = QtWidgets.QGraphicsView(self.horizontalLayoutWidget_2)
                 self.graphicViewActualise.setStyleSheet("background-color: rgb(255, 200, 0);")
                 sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-                sizePolicy.setHorizontalStretch(10)
-                sizePolicy.setVerticalStretch(10)
+                sizePolicy.setHorizontalStretch(1)
+                sizePolicy.setVerticalStretch(1)
                 sizePolicy.setHeightForWidth(self.graphicViewActualise.sizePolicy().hasHeightForWidth())
 
                 # code couleur fichier actualisé
@@ -143,7 +149,7 @@ class Ui_MainWindow(object):
                 if not os.path.exists('../Results'):
                         os.mkdir("../Results")
                 self.model.setRootPath(QtCore.QDir.currentPath())
-                
+
                 # tree View
                 self.treeView = QtWidgets.QTreeView(self.horizontalLayoutWidget_2)
                 self.treeView.setModel(self.model)
@@ -161,7 +167,7 @@ class Ui_MainWindow(object):
                 self.treeView.setWindowTitle("Results")
                 self.treeView.setStyleSheet("color: rgb(255,255,255);\n" "background-color: rgb(0, 4, 28);")
                 self.layout_for_tree.addWidget(self.treeView)
-                self.left_container.addLayout(self.layout_for_tree)
+                self.left_container.addLayout(self.layout_for_tree, 20)
 
                 # bar de progression
                 self.progressBar = QtWidgets.QProgressBar(self.horizontalLayoutWidget_2)
@@ -183,6 +189,7 @@ class Ui_MainWindow(object):
 
                 # bouton start
                 self.buttonStart = QtWidgets.QPushButton(self.horizontalLayoutWidget_2)
+
                 #sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
                 sizePolicy.setHorizontalStretch(0)
                 sizePolicy.setVerticalStretch(0)
@@ -194,20 +201,46 @@ class Ui_MainWindow(object):
                 self.buttonStart.setEnabled(False)
                 self.buttons_container.addWidget(self.buttonStart)
 
+                self.quickInfoContainer = QtWidgets.QHBoxLayout()
+                self.quickInfoContainer.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
+                self.quickInfoContainer.setContentsMargins(10, 20, 10, 10)
+                self.quickInfoContainer.setObjectName("quick_info_container")
+                self.quickInfo = QtWidgets.QLabel(self.horizontalLayoutWidget_2)
+
+                self.quickInfo.setStyleSheet("font: 8.5pt Futura; background-color: rgb(0, 4, 38);\n" "color:rgb(255, 0, 0);")
+                self.quickInfo.setObjectName("quick_info")
+                self.quickInfo.setText("")
+
+                self.quickInfo.setContentsMargins(10,10,10,10)
+                self.quickInfo.setAlignment(QtCore.Qt.AlignCenter)
+                self.quickInfoContainer.addWidget(self.quickInfo, 1)
+                self.quickInfoContainer.setAlignment(QtCore.Qt.AlignHCenter)
+
+
+
+                self.copyright = QtWidgets.QLabel()
+                self.copyright.setStyleSheet("font: 8.5pt Futura; background-color: rgb(0, 4, 38);\n" "color:rgb(255, 255, 255);")
+                self.copyright.setObjectName("copyright")
+                self.copyright.setText("©2022   Darwich A | Elamine M | Janati S | Maliki Y | Qadadri H ")
+                self.copyright.setAlignment(QtCore.Qt.AlignCenter)
+
+                self.copyrightContainer = QtWidgets.QVBoxLayout()
+                self.copyrightContainer.addStretch(1)
+                self.copyrightContainer.addWidget(self.copyright)
+
                 # container de gauche (menu et log)
-                self.left_container.addLayout(self.buttons_container)
-                self.left_container.setStretch(0, 2)
-                self.left_container.setStretch(2, 18)
-                self.left_container.setStretch(3, 1)
-                self.left_container.setStretch(4, 1)
+                self.left_container.addLayout(self.buttons_container, 3)
+                self.left_container.addLayout(self.quickInfoContainer, 1)
+                self.left_container.addLayout(self.copyrightContainer, 1)
+
                 self.container.addLayout(self.left_container)
-                
+
                 self.right_container = QtWidgets.QVBoxLayout()
                 self.right_container.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
                 self.right_container.setContentsMargins(0, 50, 0, 20)
                 self.right_container.setObjectName("right_container")
-                
-                
+
+
                 self.labelPreferences = QtWidgets.QLabel()
                 sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
                 sizePolicy.setHorizontalStretch(0)
@@ -363,17 +396,17 @@ class Ui_MainWindow(object):
                 self.logOutput = QtWidgets.QTextEdit()
                 self.logOutput.setReadOnly(True)
                 self.logOutput.setLineWrapMode(QtWidgets.QTextEdit.NoWrap)
-                
+
                 font = self.logOutput.font()
                 font.setFamily("Courier")
-                font.setPointSize(8)
+                font.setPointSize(8.5)
                 self.logOutput.moveCursor(QtGui.QTextCursor.End)
                 self.logOutput.setCurrentFont(font)
                 sb = self.logOutput.verticalScrollBar()
                 sb.setValue(sb.maximum())
                 self.logOutput.setStyleSheet("background-color: rgb(0, 3, 30);\n" "color: rgb(0, 250, 125);")
                 self.container_log.addWidget(self.logOutput)
-                
+
 
                 self.right_container.addLayout(self.container_log)
                 self.right_container.setStretch(0, 2)
@@ -383,21 +416,22 @@ class Ui_MainWindow(object):
                 self.container.addLayout(self.right_container)
                 self.container.setStretch(0, 2)
                 self.container.setStretch(1, 3)
-               
+
                 self.horizontalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
-                self.horizontalLayoutWidget.setGeometry(QtCore.QRect(10, 10, 200, 150))
+                self.horizontalLayoutWidget.setGeometry(QtCore.QRect(10, 10, 400, 150))
                 self.horizontalLayoutWidget.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding))
                 self.horizontalLayoutWidget.setObjectName("horizontalLayoutWidget")
-                self.horizontalLayoutWidget.setContentsMargins(0,0,0,50)
+                self.horizontalLayoutWidget.setContentsMargins(0,10,0,50)
+
                 self.title_container = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget)
                 self.title_container.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
-                self.title_container.setContentsMargins(0, 0, 0, 0)
+                self.title_container.setContentsMargins(20, 10, 0, 10)
                 self.title_container.setSpacing(10)
                 self.title_container.setObjectName("title_container")
                 self.mainTitle = QtWidgets.QLabel(self.horizontalLayoutWidget)
                 pixmap = QPixmap('../images/logo.png')
                 self.mainTitle.setPixmap(pixmap.scaled(158,60, QtCore.Qt.KeepAspectRatio))
- 
+
                 sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
                 sizePolicy.setHorizontalStretch(0)
                 sizePolicy.setVerticalStretch(0)
@@ -411,17 +445,24 @@ class Ui_MainWindow(object):
                 self.mainTitle.setObjectName("mainTitle")
                 self.title_container.addWidget(self.mainTitle)
 
+                self.timer = QtWidgets.QTextEdit()
+                self.timer.setReadOnly(True)
+                self.timer.setStyleSheet("font: 8.5pt Futura;\n background-color: rgb(0, 4, 38);\n color:rgb(0, 250, 125); border: 0;")
+                self.title_container.addWidget(self.timer)
+                self.timer.setText("Temps écoulé: 00:00:00")
+                self.timer.setAlignment(QtCore.Qt.AlignCenter)
+
                 self.horizontalLayoutWidget_2.raise_()
                 self.horizontalLayoutWidget.raise_()
                 MainWindow.setCentralWidget(self.centralwidget)
-                
+
                 self.retranslateUi(MainWindow)
                 QtCore.QMetaObject.connectSlotsByName(MainWindow)
-                                
+
 
         def retranslateUi(self, MainWindow):
                 _translate = QtCore.QCoreApplication.translate
-                MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+                MainWindow.setWindowTitle(_translate("MainWindow", "Genbank"))
                 self.labelArborescence.setText(_translate("MainWindow", "Résultats"))
                 self.labelActualise.setText(_translate("MainWindow", "Actualisé"))
                 self.labelCree.setText(_translate("MainWindow", "Créé"))
@@ -441,7 +482,7 @@ class Ui_MainWindow(object):
                 self.checkBox_mobile_intron.setText(_translate("MainWindow", "Intron"))
                 self.label_inputRegion.setText(_translate("MainWindow", "Personnalisé:"))
                 self.labelLog.setText(_translate("MainWindow", "Log"))
-                
+
 
         def connect_ui(self, genbank):
                 self.buttonStart.clicked.connect(genbank.worker)

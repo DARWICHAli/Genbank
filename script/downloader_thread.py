@@ -6,7 +6,6 @@ import os.path
 from multiprocessing import Pool
 import pickle
 from ftp_downloader import *
-from parser_class import ParserClass
 from multiprocessing import Pool
 import shutil
 import os
@@ -14,19 +13,22 @@ import ftplib
 import socket
 from ftplib import error_temp
 from time import sleep 
+from parser_thread import bdd_path
 
 save_pickle = False
 DEBUG = False
 VERBOSE = False
-
+green = [0,255,0,255]
+white = [255,255,255,255]
+purple = [255,0,255,255] 
+red = [255,0,0,255] 
 
 class DownloaderThread(QtCore.QThread):
 	
 	progress_signal = QtCore.pyqtSignal(int)
-	log_signal = QtCore.pyqtSignal(str)
+	log_signal = QtCore.pyqtSignal(str, list)
 	dataframe_result = QtCore.pyqtSignal(pd.core.frame.DataFrame)
 	end_signal = QtCore.pyqtSignal(str)
-	
 
 	def __init__(self, parent=None, index = 0):
 		super(DownloaderThread, self).__init__(parent)
@@ -46,18 +48,34 @@ class DownloaderThread(QtCore.QThread):
 
 		start_time = time.time()		
 		
+		self.remove_ill_terminated()
 		self.load_tree()
 
-		self.log_signal.emit("Téléchargement de l'arborescence en " + str(time.time() - start_time) + " s.")
+		self.log_signal.emit("Téléchargement de l'arborescence en " + str(round(time.time() - start_time,3)) + " s.", green)
 		self.end_signal.emit("Terminé avec succès.")
+
 
 ################################################################################
 ################################################################################
+
+	def remove_ill_terminated(self):
+		try:
+			bdd = open(bdd_path,"r")
+			lines = bdd.readlines()
+			bdd.close()
+			for l in lines:
+				try:
+					os.remove(l.strip('\n'))
+				except: pass
+			try: os.remove(bdd_path)
+			except: pass
+		except: pass
 
 	def download_files(self):
 		# Parsing of "overview.txt"
 		organism_names = []
 		organism_paths = []
+		
 
 		# Retrieving the information from overview.txt to build the tree
 		with open('../GENOME_REPORTS/overview.txt') as f:
@@ -85,31 +103,29 @@ class DownloaderThread(QtCore.QThread):
 					# to get the right index in dataframe
 					organism_names.append(parsed_row[0])
 
-					organism_paths.append('../Results/' + kingdom +'/' + group +'/' + subgroup +'/' + organism)
+					organism_paths.append('../Results/' + kingdom +'/' + group +'/' + subgroup +'/' + organism +'/')
 
 				except IndexError : pass
 
 		# Parsing of the IDS
 		ids_files = os.listdir('../GENOME_REPORTS/IDS/')
-		if VERBOSE:
-			print('overview done !')
-		msg = "Overview Done. Parsing IDS to store in pickle dataframe..."
-		print(msg)
-		self.log_signal.emit(msg) 
+
+		self.log_signal.emit("Overview terminée.",green) 
+		self.log_signal.emit("Récupération des IDs à stocker dans le dataframe...",white) 
 
 		#organism_names_ids = [] # we will store the organisms names here
 		organism_paths_dataframe = []	# we will store the organisms paths here
 		organism_NC_dataframe = []	# we will store the NC to parse here
+		organism_names_dataframe = []
 		i = 0
 		found = 0
-		not_found = 0
 
 		# looping through the kingdoms ids files (viruses.ids, archaea.ids, etc ..)
 		for ids in ids_files:
 			i += 1
 
-			msg = "Parsing " + str(ids) + "..."
-			self.log_signal.emit(msg)
+			msg = "Récupération des IDs des " + str(ids) + "..."
+			self.log_signal.emit(msg, white)
 			with open('../GENOME_REPORTS/IDS/' + ids) as f:
 				#n_line = sum(1 for _ in f)
 				if VERBOSE:
@@ -149,15 +165,17 @@ class DownloaderThread(QtCore.QThread):
 						try:
 							organism_paths_dataframe.append(organism_paths[index])
 							organism_NC_dataframe.append([parsed_row[1]])
+							organism_names_dataframe.append(organism_names[index].replace(' ','_').replace('/','_').replace('[','').replace(']','').replace(':','_').replace('\'',''))
 						except: pass
 					
 
 		# Store the organisms in pandas DataFrame
 		organism_df = pd.DataFrame({
-					#"name":organism_names_ids,
+					"name":organism_names_dataframe,
 					"path":organism_paths_dataframe,
-					"NC":organism_NC_dataframe})
-		print(organism_df)
+					"NC":organism_NC_dataframe,
+					"features":[ [] for i in organism_paths_dataframe]
+					})
 
 		# Create a pickle file to save the dataframe in local
 		if not os.path.exists("../pickle"):
@@ -173,29 +191,33 @@ class DownloaderThread(QtCore.QThread):
 
 	def load_df_from_pickle(self):
 
-		msg = "Loading dataframe from pickle..."
-		print(msg)
-		self.log_signal.emit(msg)
+		msg = "Récupération des données depuis le dataframe..."
+		if VERBOSE:
+			print(msg)
+		self.log_signal.emit(msg, white)
 
 		try:
 			with open("../pickle/organism_df", 'rb') as f:
 				organism_df = pickle.load(f)
 		except IOError:
 			msg = "pickle file not accessible"
-			print(msg)
-			self.log_signal.emit(msg) 
+			if VERBOSE:
+				print(msg)
+			self.log_signal.emit(msg, red) 
 			return
 
-		msg = "Creating hierarchy..."
-		print(msg)
-		self.log_signal.emit(msg)
+		msg = "Construction de l'arborescence..."
+		if VERBOSE:
+			print(msg)
+		self.log_signal.emit(msg, white)
 		for i in range(len(organism_df)):
 			if not os.path.exists(organism_df["path"][i]):
 				os.makedirs(organism_df["path"][i])
 
-		msg = "Finished loading hierarchy"
-		print(msg)
-		self.log_signal.emit(msg)
+		msg = "Construction de l'arborescence terminée avec succès."
+		if VERBOSE:
+			print(msg)
+		self.log_signal.emit(msg, green)
 
 		self.dataframe_result.emit(organism_df)
 
@@ -210,9 +232,10 @@ class DownloaderThread(QtCore.QThread):
 	def stop(self):
 
 		self.isRunning = False
-		print("Stopping thread...",self.index)
-		msg = "Stopping thread..." + str(self.index)
-		self.log_signal.emit(msg)
+		if VERBOSE:
+			print("Stopping thread " + str(self.index) + "...")
+		msg = "Thread " + str(self.index) + " finished."
+		self.log_signal.emit(msg, white)
 		self.terminate()
 		
 	
@@ -252,7 +275,6 @@ class DownloaderThread(QtCore.QThread):
 			self.download_files()
 		
 		self.load_df_from_pickle()
-		#print("loaded from ftp (file or directory doesn't exist)")
 
 
 
@@ -263,8 +285,7 @@ class DownloaderThread(QtCore.QThread):
 	def download_ftp(self):
 
 		try: shutil.rmtree('../GENOME_REPORTS') # remove all files/subdirectories
-		except: 
-			print("exception in download_ftp(): rmtree  ../GENOME_REPORTS failed.")
+		except: pass
 
 		try:
 			os.mkdir("../GENOME_REPORTS")
@@ -281,10 +302,10 @@ class DownloaderThread(QtCore.QThread):
 		files = [("", "overview.txt"),("IDS","Eukaryota.ids"),("IDS", "Archaea.ids"), ("IDS", "Bacteria.ids"), ("IDS", "Viruses.ids")]
 		files = [(directory,) + f for f in files]
 
-		msg = "Downloading files..."
-		print(msg)
-		self.log_signal.emit(msg)
-		print(files)
+		msg = "Téléchargement des fichiers..."
+		if VERBOSE:
+			print(msg)
+		self.log_signal.emit(msg, white)
 		with Pool(5) as p:
 			p.map(download_ftp_file, files)
 

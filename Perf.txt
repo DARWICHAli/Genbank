@@ -1,0 +1,6 @@
+ID download + arbo : 160.298 s
+Virus:
+Intron Deltavirus : 4.403 s
+Intron DsRNA : 9.268 s
+Intron Satellites : 17.671 s
+Intron Plants/Green_Algae :  s

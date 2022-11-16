@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QApplication
 import genbank as genbank
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtGui
+from multiprocessing import freeze_support
 
 def main():
     import sys
@@ -14,5 +15,6 @@ def main():
     sys.exit(app.exec_())
  
 if __name__ == "__main__":
+    freeze_support()
     main()
 

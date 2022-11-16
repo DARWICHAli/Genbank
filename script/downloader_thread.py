@@ -6,12 +6,9 @@ import os.path
 from multiprocessing import Pool
 import pickle
 from ftp_downloader import *
-from multiprocessing import Pool
 import shutil
 import os
 import ftplib
-import socket
-from ftplib import error_temp
 from time import sleep 
 from parser_thread import bdd_path
 

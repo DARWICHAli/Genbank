@@ -9,7 +9,7 @@ from parser_functions import ParserFunctions, bdd_path
 import threading
 from functools import partial
 from itertools import repeat
-from multiprocessing.pool import ThreadPool as Pool
+from multiprocessing.pool import Pool
 
 save_pickle = False
 DEBUG = False
@@ -20,7 +20,6 @@ purple = [255,0,255,255]
 red = [255,0,0,255]
 
 from threading import Thread, Lock
-
 
 class ParserThread(QtCore.QThread):
 

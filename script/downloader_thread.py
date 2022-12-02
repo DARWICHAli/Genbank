@@ -155,18 +155,20 @@ class DownloaderThread(QtCore.QThread):
 								found = False
 						if not found: continue
 
-					try:
+					# try:
 						# checking if we have already added this organism to the array
 						# If so, we simply add another NC
-						organism_NC_dataframe[organism_paths_dataframe.index(organism_paths[index])].append(parsed_row[1])
-					except ValueError:
+					# 	organism_NC_dataframe[organism_paths_dataframe.index(organism_paths[index])].append(parsed_row[1])
+					# except ValueError:
 						# We encouter this organism for the first time, we add it to the array with the NC
 						#organism_names_ids.append(organism_names[index])
-						try:
-							organism_paths_dataframe.append(organism_paths[index])
-							organism_NC_dataframe.append([parsed_row[1]])
-							organism_names_dataframe.append(organism_names[index].replace(' ','_').replace('/','_').replace('[','').replace(']','').replace(':','_').replace('\'',''))
-						except: pass
+					#try:
+					organism_paths_dataframe.append(organism_paths[index])
+					organism_NC_dataframe.append([parsed_row[1]])
+					organism_names_dataframe.append(organism_names[index].replace(' ','_').replace('/','_').replace('[','').replace(']','').replace(':','_').replace('\'',''))
+					#except:
+						 
+						#organism_paths_dataframe = organism_paths_dataframe[:len(organism_name)]
 					
 
 		# Store the organisms in pandas DataFrame

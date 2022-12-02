@@ -83,7 +83,7 @@ _FormatToIterator = {
 }
 
 class ParserFunctions:
-    verbose = False
+    verbose = True
     # This is a generator function!
     def _SeqIO_to_alignment_iterator(cls, handle, format, mutex, seq_count=None):
 
@@ -155,8 +155,10 @@ class ParserFunctions:
             raise ValueError("The alphabet argument is no longer supported")
 
         iterator_generator = _FormatToIterator.get(format)
+
         if iterator_generator:
             return iterator_generator(handle)
+
         if format in AlignIO._FormatToIterator:
             # Use Bio.AlignIO to read in the alignments
             v = cls.parse_2(handle, format, mutex)
@@ -177,6 +179,8 @@ class ParserFunctions:
             return None
         try:
             record = next(iterator)
+            # print(f"## ANN: {record.annotations['organism']}")
+            # print(f"## REC: {record.features}")
         except StopIteration:
             raise ValueError("No records found in handle") from None
         try:
@@ -254,6 +258,7 @@ class ParserFunctions:
         return False
 
     def parse_NC(self, row_df, region_choice, log_signal, progress_signal, organism_df, mutex, mutex_fetch, mutex_count, mutex_stop):
+        
         global count
         print(str(get_ident()))
         mutex_count.acquire()
@@ -261,287 +266,310 @@ class ParserFunctions:
         mutex_count.release()
         i = 0
         global stop
-        index_df, organism_name, path, NC_LIST, file_features = row_df
+        index_df, organism_name, path, NC, file_features = row_df
+        print(f"### Organism: {organism_name}")
         cp_region_choice = [i for i in region_choice]
-        for NC in NC_LIST:
+        #for NC in NC_LIST:
+        if(self.check_stopping(mutex_stop)):
+            mutex_count.acquire()
+            count = count - 1
+            mutex_count.release()
+            self.emit_log(log_signal, f'Pass {NC}: Mutex Stop', purple)
+            print(f'######################## \n \n Pass {NC}: Mutex Stop')
+            return
+        i+=1
+        msg = "Parsing " + str(NC) + ' in: ' + str(path)
+        log_signal.emit(msg, white)
+        Entrez.email = ''.join(random.choice(string.ascii_lowercase) for i in range(20)) + '@random.com'
+        Entrez.api_key = 'd190df79af669bbea636278753c3236afa08'
+
+        # Premier efetch pour récupérer juste la date.
+        # le read prends prend plus de temps que la partie parsing, donc il faut vérifier la date avant
+        t = time.time()
+        # gestion timeout
+        try:
+            handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gb", retmode="text", datetype='mdat')
+        except:
+            mutex_fetch.acquire()
+            timer = 0.0
+            while(timer != 5.0):
+                if self.check_stopping(mutex_stop):
+                    self.emit_log(log_signal, f'Pass {NC}: Mutex Stop', purple)
+                    print(f'######################## \n \n Pass {NC}: Mutex Stop')
+                    return
+                timer += 0.1
+            handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gb", retmode="text", datetype='mdat')
+            mutex_fetch.release()
+
+        # print(f" ## Efetch 1: {time.time() - t}")
+
+        handle_date = handle.readline().strip().split(' ')
+        handle_date = handle_date[len(handle_date)-1]
+        NC_modified_init = self.verify_modification_date(path, handle_date)
+        NC_modified = NC_modified_init
+        new_region_choice = []
+
+
+        for option in cp_region_choice:
+            if(len(file_features) and option not in file_features):
+                continue
+            NC_modified = NC_modified_init
+            filename = path + "{}_{}_{}.{}.txt".format(option, organism_name, NC, i )
+            NC_modified = NC_modified or not os.path.isfile(filename)
+            if(NC_modified):
+                new_region_choice.append(option)
+            else:
+                self.emit_log(log_signal, "Skip: option " + option + " in " + NC + " is up to date.", purple)
+
+        if(not len(new_region_choice)):
+            self.emit_log(log_signal, f"Pass {NC}: No regions selected", purple)
+            print(f'######################## \n \n Pass {NC}: Mutex Stop')
+            return
+
+        cp_region_choice = new_region_choice
+
+        Entrez.email = ''.join(random.choice(string.ascii_lowercase) for i in range(20)) + '@random.com'
+        Entrez.api_key = '24f75a54c3b96e27fcae236d031f3cfb4909'
+        
+        t = time.time()           
+        # deuxieme efectch car on perd les informations du premiers
+        try:
+            handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gbwithparts", retmode="text", datetype='mdat')
+        except:
+            mutex_fetch.acquire()
+            timer = 0.0
+            while(timer != 5.0):
+                if self.check_stopping(mutex_stop):
+                    mutex_count.acquire()
+                    count = count - 1
+                    mutex_count.release()
+                    self.emit_log(log_signal, f'Pass {NC}: Mutex Stop', purple)
+                    print(f'######################## \n \n Pass {NC}: Mutex Stop')
+                    return
+                timer += 0.1
+            handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gbwithparts", retmode="text", datetype='mdat')
+            mutex_fetch.release()
+
+
+        #print(f" ## Efetch 2: {time.time() - t}")
+
+        t = time.time()
+
+        with warnings.catch_warnings(record=True) as w:
+            if(not self.check_stopping(mutex_stop)):
+                handle_read = self.read(handle, "gb", mutex_stop)
+            else:
+                handle_read = None
+            #handle_read = SeqIO.read("test_input.gb", "gb")
+            if handle_read is None:
+                mutex_count.acquire()
+                count = count - 1
+                mutex_count.release()
+                self.emit_log(log_signal, f'Pass {NC}: Mutex Stop', purple)
+                return
+            if w:
+                for warning in w:
+                    log_signal.emit(warning.message, purple)
+
+        print(f" ## Handle read: {time.time() - t}")
+
+        organism = handle_read.annotations['organism']
+        features = handle_read.features
+
+        # delete 'intron' from regions beceause it's not actually a region but just a parsing option
+        regions = ["CDS", "centromere", "mobile_element", "ncRNA", "rRNA", "telomere", "tRNA", "3'UTR", "5'UTR"]
+        try:
+            file_regions = handle_read.annotations['structured_comment']['Genome-Annotation-Data']['Features Annotated'].split("; ")
+        except:
+            file_regions = regions
+
+        selected_regions = []
+        intron_is_selected = False
+        cds_is_selected = False
+        intron_filename = ""
+        cds_filename = ""
+        filename = ""
+
+        # we update the dataframe
+        organism_df['features'][index_df] = [f for f in file_regions]
+        # if 0 introns found, this will be deleted from the dataframe, so that we don't verify it again in
+        # in the next executions
+        if("CDS" in file_regions):
+            organism_df['features'][index_df].append("intron")
+
+        for option in cp_region_choice:
+            if option in file_regions:
+                if(option == 'CDS'):
+                    cds_is_selected = True
+                selected_regions.append(option)
+            elif option == "intron":
+                if "CDS" not in cp_region_choice:
+                    selected_regions.append('CDS')
+                intron_is_selected = True
+            else:
+                self.emit_log(log_signal,f'Pass : {NC} does not contain selected option \'{option}\'', purple)
+
+        if(not len(selected_regions)):
+            self.emit_log(log_signal,'Pass : {} does not contain any of the selected options \'{}\''.format(NC, option), purple)
+            print(f'######################## \n \n Pass : {NC} does not contain selected option \'{option}\'')
+            return
+
+        visited_regions = [False for i in selected_regions]
+
+        count_complements = 0
+        nb_introns = 0
+        for f in features:
             if(self.check_stopping(mutex_stop)):
                 mutex_count.acquire()
                 count = count - 1
                 mutex_count.release()
+                self.emit_log(log_signal, 'Mutex Stop', purple)
                 return
-            i+=1
-            msg = "Parsing " + str(NC) + ' in: ' + str(path)
-            log_signal.emit(msg, white)
-            Entrez.email = ''.join(random.choice(string.ascii_lowercase) for i in range(20)) + '@random.com'
-            Entrez.api_key = 'd190df79af669bbea636278753c3236afa08'
+            if f.type in selected_regions:
+                index = selected_regions.index(f.type)
 
-            # Premier efetch pour récupérer juste la date.
-            # le read prends prend plus de temps que la partie parsing, donc il faut vérifier la date avant
+                if f.location:
+                    if(self.manage_errors(f, len(handle_read.seq), log_signal)):
+                        continue
 
-            # gestion timeout
-            try:
-                handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gb", retmode="text", datetype='mdat')
-            except:
-                mutex_fetch.acquire()
-                timer = 0.0
-                while(timer != 5.0):
-                    if self.check_stopping(mutex_stop):
-                        return
-                    timer += 0.1
-                handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gb", retmode="text", datetype='mdat')
-                mutex_fetch.release()
+                    intron_seq = ""
+                    cds_seq = ""
+                    final_seq = ""
+                    header = f.type + ' ' + organism + ' ' + str(handle_read.id)+':'
 
-            handle_date = handle.readline().strip().split(' ')
-            handle_date = handle_date[len(handle_date)-1]
-            NC_modified_init = self.verify_modification_date(path, handle_date)
-            NC_modified = NC_modified_init
-            new_region_choice = []
+                    if f.type == "CDS":
+                        if intron_is_selected:
+                            intron_filename = path + "intron_{}_{}.txt".format(organism_name, handle_read.id)
+                        if cds_is_selected:
+                            cds_filename = path + "CDS_{}_{}.txt".format(organism_name, handle_read.id)
+                    else:
+                        filename = path + "{}_{}_{}.txt".format(f.type, organism_name, handle_read.id)
 
-
-            for option in cp_region_choice:
-                if(len(file_features) and option not in file_features):
-                    continue
-                NC_modified = NC_modified_init
-                filename = path + "{}_{}_{}.{}.txt".format(option, organism_name, NC, i )
-                NC_modified = NC_modified or not os.path.isfile(filename)
-                if(NC_modified):
-                    new_region_choice.append(option)
-                else:
-                    self.emit_log(log_signal, "Skip: option " + option + " in " + NC + " is up to date.", purple)
-
-            if(not len(new_region_choice)):
-                continue
-
-            cp_region_choice = new_region_choice
-
-            Entrez.email = ''.join(random.choice(string.ascii_lowercase) for i in range(20)) + '@random.com'
-            Entrez.api_key = '24f75a54c3b96e27fcae236d031f3cfb4909'
-            # deuxieme efectch car on perd les informations du premiers
-            try:
-                handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gbwithparts", retmode="text", datetype='mdat')
-            except:
-                mutex_fetch.acquire()
-                timer = 0.0
-                while(timer != 5.0):
-                    if self.check_stopping(mutex_stop):
-                        mutex_count.acquire()
-                        count = count - 1
-                        mutex_count.release()
-                        return
-                    timer += 0.1
-                handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gbwithparts", retmode="text", datetype='mdat')
-                mutex_fetch.release()
-
-            with warnings.catch_warnings(record=True) as w:
-                if(not self.check_stopping(mutex_stop)):
-                    handle_read = self.read(handle, "gb", mutex_stop)
-                else:
-                    handle_read = None
-                #handle_read = SeqIO.read("test_input.gb", "gb")
-                if handle_read is None:
-                    mutex_count.acquire()
-                    count = count - 1
-                    mutex_count.release()
-                    return
-                if w:
-                    for warning in w:
-                        log_signal.emit(warning.message, purple)
-
-
-            organism = handle_read.annotations['organism']
-            features = handle_read.features
-
-            # delete 'intron' from regions beceause it's not actually a region but just a parsing option
-            regions = ["CDS", "centromere", "mobile_element", "ncRNA", "rRNA", "telomere", "tRNA", "3'UTR", "5'UTR"]
-            try:
-                file_regions = handle_read.annotations['structured_comment']['Genome-Annotation-Data']['Features Annotated'].split("; ")
-            except:
-                file_regions = regions
-
-            selected_regions = []
-            intron_is_selected = False
-            cds_is_selected = False
-            intron_filename = ""
-            cds_filename = ""
-            filename = ""
-
-            # we update the dataframe
-            organism_df['features'][index_df] = [f for f in file_regions]
-            # if 0 introns found, this will be deleted from the dataframe, so that we don't verify it again in
-            # in the next executions
-            if("CDS" in file_regions):
-                organism_df['features'][index_df].append("intron")
-
-            for option in cp_region_choice:
-                if option in file_regions:
-                    if(option == 'CDS'):
-                        cds_is_selected = True
-                    selected_regions.append(option)
-                elif option == "intron":
-                    if "CDS" not in cp_region_choice:
-                        selected_regions.append('CDS')
-                    intron_is_selected = True
-                else:
-                    self.emit_log(log_signal,'Pass : {} does not contain selected option \'{}\''.format(NC, option), purple)
-
-            if(not len(selected_regions)):
-                self.emit_log(log_signal,'Pass : {} does not contain any of the selected options \'{}\''.format(NC, option), purple)
-                continue
-
-            visited_regions = [False for i in selected_regions]
-
-            count_complements = 0
-            nb_introns = 0
-            for f in features:
-                if(self.check_stopping(mutex_stop)):
-                    mutex_count.acquire()
-                    count = count - 1
-                    mutex_count.release()
-                    return
-                if f.type in selected_regions:
                     index = selected_regions.index(f.type)
-
-                    if f.location:
-                        if(self.manage_errors(f, len(handle_read.seq), log_signal)):
-                            continue
-
-                        intron_seq = ""
-                        cds_seq = ""
-                        final_seq = ""
-                        header = f.type + ' ' + organism + ' ' + str(handle_read.id)+':'
-
-                        if f.type == "CDS":
-                            if intron_is_selected:
-                                intron_filename = path + "intron_{}_{}.txt".format(organism_name, handle_read.id)
-                            if cds_is_selected:
-                                cds_filename = path + "CDS_{}_{}.txt".format(organism_name, handle_read.id)
-                        else:
-                            filename = path + "{}_{}_{}.txt".format(f.type, organism_name, handle_read.id)
-
-                        index = selected_regions.index(f.type)
-                        if (visited_regions[index] == False):
-                            try:
-                                if f.type == "CDS":
-                                    if intron_is_selected:
-                                        os.remove(intron_filename)
-                                    if cds_is_selected:
-                                        os.remove(cds_filename)
-                                else:
-                                    os.remove(filename)
-                            except:
-                                pass
+                    if (visited_regions[index] == False):
+                        try:
+                            if f.type == "CDS":
+                                if intron_is_selected:
+                                    os.remove(intron_filename)
+                                if cds_is_selected:
+                                    os.remove(cds_filename)
+                            else:
+                                os.remove(filename)
+                        except:
+                            pass
 
 
-                        if f.type == "CDS":
-                            if intron_is_selected:
-                                if(visited_regions[index] == False):
-                                    self.write_bdd(bdd_path, intron_filename, mutex)
-                                intron_file = open(intron_filename, "a")
-                            if cds_is_selected:
-                                if(visited_regions[index] == False):
-                                    self.write_bdd(bdd_path, cds_filename, mutex)
-                                cds_file = open(cds_filename, "a")
-                        else:
+                    if f.type == "CDS":
+                        if intron_is_selected:
                             if(visited_regions[index] == False):
-                                self.write_bdd(bdd_path, filename, mutex)
-                            result = open(filename, "a")
+                                self.write_bdd(bdd_path, intron_filename, mutex)
+                            intron_file = open(intron_filename, "a")
+                        if cds_is_selected:
+                            if(visited_regions[index] == False):
+                                self.write_bdd(bdd_path, cds_filename, mutex)
+                            cds_file = open(cds_filename, "a")
+                    else:
+                        if(visited_regions[index] == False):
+                            self.write_bdd(bdd_path, filename, mutex)
+                        result = open(filename, "a")
 
-                        visited_regions[index] = True
+                    visited_regions[index] = True
 
-                        if f.location.strand == -1:  # complement detection
-                            count_complements += 1
-                            if f.location_operator == "join":  # complement(join) detection
-                                if f.type == "CDS":
-                                    if intron_is_selected:
-                                        try:
-                                            [intron_seq, nb] = self.join(header, handle_read.seq, f.location, log_signal, True)
-                                            nb_introns += nb
-                                        # gestion erreur
-                                        except:
-                                            continue
-
-                                    if cds_is_selected:
-                                        cds_seq = self.join(header, handle_read.seq, f.location, log_signal)[0]
-                                        # gestion erreur
-                                        if not cds_seq:
-                                            continue
-                                else:
-                                    final_seq = self.join(header, handle_read.seq, f.location, log_signal)[0]
+                    if f.location.strand == -1:  # complement detection
+                        count_complements += 1
+                        if f.location_operator == "join":  # complement(join) detection
+                            if f.type == "CDS":
+                                if intron_is_selected:
+                                    try:
+                                        [intron_seq, nb] = self.join(header, handle_read.seq, f.location, log_signal, True)
+                                        nb_introns += nb
                                     # gestion erreur
-                                    if not final_seq:
+                                    except:
                                         continue
 
-                            else:
-                                header += ' complement(' + str(f.location.start + 1) + '..' + str(f.location.end)
-                                fc = FeatureLocation(f.location.start, f.location.end, -1)
-                                header += ')\n'
-
-                                if f.type == "CDS":
-                                    if cds_is_selected:
-                                        cds_seq = header + fc.extract(handle_read.seq)
-                                else:
-                                    final_seq = header + fc.extract(handle_read.seq)
-
-                        elif f.location.strand == 1:
-                            count_complements -= 1
-                            if f.location_operator == "join":  # join detection
-                                if f.type == "CDS":
-                                    if intron_is_selected:
-                                        try:
-                                            [intron_seq, nb] = self.join(header, handle_read.seq, f.location, log_signal, True)
-                                            nb_introns += nb
-                                        # gestion erreur
-                                            if(not intron_seq): continue
-                                        except: continue
-                                    if cds_is_selected:
-                                        cds_seq = self.join(header, handle_read.seq, f.location, log_signal)[0]
-                                        # gestion erreur
-                                        if not cds_seq: continue
-                                else:
-                                    final_seq = self.join(header, handle_read.seq, f.location, log_signal)[0]
+                                if cds_is_selected:
+                                    cds_seq = self.join(header, handle_read.seq, f.location, log_signal)[0]
                                     # gestion erreur
-                                    if not final_seq: continue
-
-                            # final_seq = header + '\n' + f.extract(handle_read.seq)
+                                    if not cds_seq:
+                                        continue
                             else:
-                                header += ' {}..{}'.format(f.location.start + 1, f.location.end)
-                                fc = FeatureLocation(f.location.start, f.location.end, 1)
-                                if f.type == "CDS":
-                                    #if intron_is_selected:
-                                    #    intron_seq = header + '\n' + fc.extract(handle_read.seq)
-                                    if cds_is_selected:
-                                        cds_seq = header + '\n' + fc.extract(handle_read.seq)
-                                else:
-                                    final_seq = header + '\n' + fc.extract(handle_read.seq)
-
-                        elif f.location.strand == 0:
-                            self.emit_log(log_signal,'Pass ' + NC + ': noisy strand', purple)
-                            continue
+                                final_seq = self.join(header, handle_read.seq, f.location, log_signal)[0]
+                                # gestion erreur
+                                if not final_seq:
+                                    continue
 
                         else:
-                            self.emit_log(log_signal,'Pass ' + NC + ': cannot join complementory and normal strands', purple)
+                            header += ' complement(' + str(f.location.start + 1) + '..' + str(f.location.end)
+                            fc = FeatureLocation(f.location.start, f.location.end, -1)
+                            header += ')\n'
 
-                        file_names = []
+                            if f.type == "CDS":
+                                if cds_is_selected:
+                                    cds_seq = header + fc.extract(handle_read.seq)
+                            else:
+                                final_seq = header + fc.extract(handle_read.seq)
 
-                        if f.type == "CDS":
-                            if intron_is_selected:
-                                if intron_seq:
-                                    intron_file.writelines(intron_seq + '\n')
-                                intron_file.close()
-                                file_names.append(intron_filename)
+                    elif f.location.strand == 1:
+                        count_complements -= 1
+                        if f.location_operator == "join":  # join detection
+                            if f.type == "CDS":
+                                if intron_is_selected:
+                                    try:
+                                        [intron_seq, nb] = self.join(header, handle_read.seq, f.location, log_signal, True)
+                                        nb_introns += nb
+                                    # gestion erreur
+                                        if(not intron_seq): continue
+                                    except: continue
+                                if cds_is_selected:
+                                    cds_seq = self.join(header, handle_read.seq, f.location, log_signal)[0]
+                                    # gestion erreur
+                                    if not cds_seq: continue
+                            else:
+                                final_seq = self.join(header, handle_read.seq, f.location, log_signal)[0]
+                                # gestion erreur
+                                if not final_seq: continue
 
-                            if cds_is_selected:
-                                if cds_seq:
-                                    cds_file.writelines(cds_seq + '\n')
-                                cds_file.close()
-                                file_names.append(cds_filename)
+                        # final_seq = header + '\n' + f.extract(handle_read.seq)
+                        else:
+                            header += ' {}..{}'.format(f.location.start + 1, f.location.end)
+                            fc = FeatureLocation(f.location.start, f.location.end, 1)
+                            if f.type == "CDS":
+                                #if intron_is_selected:
+                                #    intron_seq = header + '\n' + fc.extract(handle_read.seq)
+                                if cds_is_selected:
+                                    cds_seq = header + '\n' + fc.extract(handle_read.seq)
+                            else:
+                                final_seq = header + '\n' + fc.extract(handle_read.seq)
 
-                        elif final_seq:
-                            result.writelines(final_seq + '\n')
-                            result.close()
-                            file_names.append(filename)
+                    elif f.location.strand == 0:
+                        self.emit_log(log_signal,'Pass ' + NC + ': noisy strand', purple)
+                        continue
 
-                        self.copy_bdd(bdd_path, file_names, mutex)
+                    else:
+                        self.emit_log(log_signal,'Pass ' + NC + ': cannot join complementory and normal strands', purple)
+
+                    file_names = []
+
+                    if f.type == "CDS":
+                        if intron_is_selected:
+                            if intron_seq:
+                                intron_file.writelines(intron_seq + '\n')
+                            intron_file.close()
+                            file_names.append(intron_filename)
+
+                        if cds_is_selected:
+                            if cds_seq:
+                                cds_file.writelines(cds_seq + '\n')
+                            cds_file.close()
+                            file_names.append(cds_filename)
+
+                    elif final_seq:
+                        result.writelines(final_seq + '\n')
+                        result.close()
+                        file_names.append(filename)
+
+                    self.copy_bdd(bdd_path, file_names, mutex)
+
             if(nb_introns == 0 and intron_is_selected):
                 # we don't want to parse intron from this NC ever again!!!! (unless you redownload the reports)
                 if("intron" in organism_df['features'][index_df]):
@@ -557,6 +585,8 @@ class ParserFunctions:
 
             progress_signal.emit(0)
             self.emit_log(log_signal, "Parsing of " + NC + " done successfully.", green)
+            print(f'############## \n \nParsing of {NC} done successfully.')
+
         mutex_count.acquire()
         count = count - 1
         mutex_count.release()

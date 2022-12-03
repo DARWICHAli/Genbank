@@ -238,7 +238,9 @@ class ParserFunctions:
 
     def emit_log(self, log_signal, msg, color):
         if self.verbose:
+            self.mutex.acquire()
             log_signal.emit(msg, color)
+            self.mutex.release()
 
 
     def manage_errors(self, f, len_seq, log_signal):
@@ -260,6 +262,7 @@ class ParserFunctions:
     def parse_NC(self, row_df, region_choice, log_signal, progress_signal, organism_df, mutex, mutex_fetch, mutex_count, mutex_stop):
         
         global count
+        self.mutex = mutex
         print(str(get_ident()))
         mutex_count.acquire()
         count = count + 1
@@ -279,7 +282,7 @@ class ParserFunctions:
             return
         i+=1
         msg = "Parsing " + str(NC) + ' in: ' + str(path)
-        log_signal.emit(msg, white)
+        self.emit_log(log_signal, msg, white)
         Entrez.email = ''.join(random.choice(string.ascii_lowercase) for i in range(20)) + '@random.com'
         Entrez.api_key = 'd190df79af669bbea636278753c3236afa08'
 
@@ -287,21 +290,27 @@ class ParserFunctions:
         # le read prends prend plus de temps que la partie parsing, donc il faut vérifier la date avant
         t = time.time()
         # gestion timeout
-        try:
-            handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gb", retmode="text", datetype='mdat')
-        except:
-            mutex_fetch.acquire()
-            timer = 0.0
-            while(timer != 5.0):
-                if self.check_stopping(mutex_stop):
-                    self.emit_log(log_signal, f'Pass {NC}: Mutex Stop', purple)
-                    print(f'######################## \n \n Pass {NC}: Mutex Stop')
-                    return
-                timer += 0.1
-            handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gb", retmode="text", datetype='mdat')
-            mutex_fetch.release()
+        for i in range(5):
+            try:
+                mutex_fetch.acquire()
+                handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gb", retmode="text", datetype='mdat')
+                mutex_fetch.release()
+                break
 
-        # print(f" ## Efetch 1: {time.time() - t}")
+            except:
+                t_start = time.time()
+                while(True):
+                    if self.check_stopping(mutex_stop):
+                        self.emit_log(log_signal, f'Pass {NC}: Mutex Stop', purple)
+                        print(f'######################## \n \n Pass {NC}: Mutex Stop')
+                        return
+                    if(time.time()-t_start > 10):
+                        break
+        if (i == 4):
+            self.emit_log(log_signal, f'Efetch error', purple)
+            return
+
+            # print(f" ## Efetch 1: {time.time() - t}")
 
         handle_date = handle.readline().strip().split(' ')
         handle_date = handle_date[len(handle_date)-1]
@@ -333,23 +342,24 @@ class ParserFunctions:
         
         t = time.time()           
         # deuxieme efectch car on perd les informations du premiers
-        try:
-            handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gbwithparts", retmode="text", datetype='mdat')
-        except:
-            mutex_fetch.acquire()
-            timer = 0.0
-            while(timer != 5.0):
-                if self.check_stopping(mutex_stop):
-                    mutex_count.acquire()
-                    count = count - 1
-                    mutex_count.release()
-                    self.emit_log(log_signal, f'Pass {NC}: Mutex Stop', purple)
-                    print(f'######################## \n \n Pass {NC}: Mutex Stop')
-                    return
-                timer += 0.1
-            handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gbwithparts", retmode="text", datetype='mdat')
-            mutex_fetch.release()
-
+        for i in range(5):
+            try:
+                mutex_fetch.acquire()
+                handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gbwithparts", retmode="text", datetype='mdat')
+                mutex_fetch.release()
+                break
+            except:
+                t_start = time.time()
+                while(True):
+                    if self.check_stopping(mutex_stop):
+                        self.emit_log(log_signal, f'Pass {NC}: Mutex Stop', purple)
+                        print(f'######################## \n \n Pass {NC}: Mutex Stop')
+                        return
+                    if(time.time()-t_start > 10):
+                        break
+        if (i == 4):
+            self.emit_log(log_signal, f'Efetch error', purple)
+            return
 
         #print(f" ## Efetch 2: {time.time() - t}")
 
@@ -369,7 +379,7 @@ class ParserFunctions:
                 return
             if w:
                 for warning in w:
-                    log_signal.emit(warning.message, purple)
+                    self.emit_log(log_signal, warning.message, purple)
 
         print(f" ## Handle read: {time.time() - t}")
 
@@ -583,13 +593,15 @@ class ParserFunctions:
                     except:
                         pass
 
-            progress_signal.emit(0)
-            self.emit_log(log_signal, "Parsing of " + NC + " done successfully.", green)
-            print(f'############## \n \nParsing of {NC} done successfully.')
+        print(f'############## \n \nParsing of {NC} done successfully.', flush=True)
+        self.emit_log(log_signal, f"Parsing of {NC} done successfully.", green)
 
         mutex_count.acquire()
         count = count - 1
         mutex_count.release()
+        mutex.acquire()
+        progress_signal.emit(0)
+        mutex.release()
         return True
 
 

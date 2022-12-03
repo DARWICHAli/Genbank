@@ -21,6 +21,18 @@ red = [255,0,0,255]
 
 from threading import Thread, Lock
 
+class mylock:
+	def __init__(self, name):
+		self.mutex = Lock()
+		self.name = name
+	def acquire(self):
+		#print("mutex acquire", self.name)
+		self.mutex.acquire()
+
+	def release(self):
+		#print("mutex release", self.name)
+		self.mutex.release()
+
 
 class ParserThread(QtCore.QThread):
 
@@ -39,10 +51,10 @@ class ParserThread(QtCore.QThread):
 		self.path_choice =  path_choice
 		self.organism_df = organism_df
 		self.isRunning = False
-		self.mutex = Lock()
-		self.mutex_fetch = Lock()
-		self.mutex_count = Lock()
-		self.mutex_stop = Lock()
+		self.mutex = mylock("mutex")
+		self.mutex_fetch = mylock("mutex fetch")
+		self.mutex_count = mylock("mutex count")
+		self.mutex_stop = mylock("mutex stop")
 		self.nb_NC = 0
 		self.nb_parsed = 0
 		self.current_file = 0

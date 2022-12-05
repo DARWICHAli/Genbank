@@ -52,8 +52,9 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 		self.thread[1].dataframe_result.connect(self.get_result)
 		self.thread[1].end_signal.connect(self.end)
 		self.thread[1].start()
-		self.quickInfo("Téléchargement de l'arborescence, veuillez patienter.\n Cela ne prendra pas plus de 3 minutes.", white)
+		self.quickInfo("Téléchargement de l'arborescence, veuillez patienter.\n Cela ne prendra pas plus de 3 minutes.", purple)
 
+		
 ################################################################################
 ################################################################################
 
@@ -154,7 +155,7 @@ class Genbank(QtWidgets.QMainWindow, QtCore.QObject):
 			self.mainwindow.buttonStart.setStyleSheet("background-color: rgb(0, 250, 125);\n" "color:rgb(0, 4, 38);")
 			self.thread[1].stop()
 			self.isRunning = False
-			self.quickInfo("Téléchargement de l'arborescence terminée.\nVeuillez selectionner les organismes et régions à parser.\nSi pas de selection d'organismes, tous seront parsés.\n\nVous pouvez arrêter le parsing à tout moment.", white)
+			self.quickInfo("Téléchargement de l'arborescence terminée.\nVeuillez selectionner les organismes et régions à parser.\nSi pas de selection d'organismes, tous seront parsés.\n\nVous pouvez arrêter le parsing à tout moment.", green)
 
 		elif(index == 2):
 			self.nb_parsed = 0

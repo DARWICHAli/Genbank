@@ -1,9 +1,11 @@
 from re import S
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QFileSystemModel
+from PyQt5.QtCore import QFileSystemWatcher
 from PyQt5.QtGui import QPixmap
 import PyQt5
 import os
+from QFSM import QFSM
 
 green = [0,255,0,255]
 white = [255,255,255,255]
@@ -14,8 +16,7 @@ class Ui_MainWindow(object):
         def setupUi(self, MainWindow):
 
                 MainWindow.setObjectName("MainWindow")
-
-
+                
 
                 self.centralwidget = QtWidgets.QWidget(MainWindow)
 
@@ -145,11 +146,13 @@ class Ui_MainWindow(object):
                 self.layout_for_tree = QtWidgets.QVBoxLayout()
                 self.layout_for_tree.setObjectName("layout_for_tree")
 
-                self.model = QFileSystemModel()
+                self.model = QFSM()
                 if not os.path.exists('../Results'):
                         os.mkdir("../Results")
                 self.model.setRootPath(QtCore.QDir.currentPath())
-
+                
+                
+                
                 # tree View
                 self.treeView = QtWidgets.QTreeView(self.horizontalLayoutWidget_2)
                 self.treeView.setModel(self.model)

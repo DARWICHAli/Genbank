@@ -41,6 +41,7 @@ green = [0,255,0,255]
 white = [255,255,255,255]
 purple = [255,0,255,255]
 red = [255,0,0,255]
+yellow = [0, 255, 255]
 
 stop = False
 count = 0
@@ -259,6 +260,8 @@ class ParserFunctions:
 
     def parse_NC(self, row_df, region_choice, log_signal, progress_signal, organism_df, mutex, mutex_fetch, mutex_count, mutex_stop):
         
+        folder_color = white
+
         global count
         print(str(get_ident()))
         mutex_count.acquire()
@@ -267,7 +270,7 @@ class ParserFunctions:
         i = 0
         global stop
         index_df, organism_name, path, NC, file_features = row_df
-        print(f"### Organism: {organism_name}")
+
         cp_region_choice = [i for i in region_choice]
         #for NC in NC_LIST:
         if(self.check_stopping(mutex_stop)):
@@ -275,7 +278,6 @@ class ParserFunctions:
             count = count - 1
             mutex_count.release()
             self.emit_log(log_signal, f'Pass {NC}: Mutex Stop', purple)
-            print(f'######################## \n \n Pass {NC}: Mutex Stop')
             return
         i+=1
         msg = "Parsing " + str(NC) + ' in: ' + str(path)
@@ -285,7 +287,6 @@ class ParserFunctions:
 
         # Premier efetch pour récupérer juste la date.
         # le read prends prend plus de temps que la partie parsing, donc il faut vérifier la date avant
-        t = time.time()
         # gestion timeout
         try:
             handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gb", retmode="text", datetype='mdat')
@@ -295,43 +296,57 @@ class ParserFunctions:
             while(timer != 5.0):
                 if self.check_stopping(mutex_stop):
                     self.emit_log(log_signal, f'Pass {NC}: Mutex Stop', purple)
-                    print(f'######################## \n \n Pass {NC}: Mutex Stop')
                     return
                 timer += 0.1
             handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gb", retmode="text", datetype='mdat')
             mutex_fetch.release()
 
-        # print(f" ## Efetch 1: {time.time() - t}")
 
+        # On vérifie si le NC a été modidifé dans la base de données Genbank
         handle_date = handle.readline().strip().split(' ')
         handle_date = handle_date[len(handle_date)-1]
+        # renvoie True si le NC a été modifié
         NC_modified_init = self.verify_modification_date(path, handle_date)
         NC_modified = NC_modified_init
+        # nouvel Array qui va contenir les régions qu'on veut parser
         new_region_choice = []
 
+        parse = False
+        # Si le NC n'est pas modifié, on vérifie si l'une des options à parser n'existe pas dans les options déjà parsées
+        # if(not NC_modified):
+        #     for i in cp_region_choice:
+        #         if(i not in file_features):
+        #             parse = True
+        #             break
+        
 
+        # A chaque tour de boucle, on vérifie si cette option a déja été parsée, donc que le fichier existe dans le dossier
+        # Si le fichier n'existe pas ou que le NC a été modifié, on ajoute cette option aux options à parser
+        # Sinon, on ne l'ajoute pas
         for option in cp_region_choice:
+            # Si la colonne file_features a été mise à jour lors de l'execution précedente,
+            # on vérifie que ce NC contient bien cette option, sinon ce n'est pas la peine de la chercher.
             if(len(file_features) and option not in file_features):
                 continue
-            NC_modified = NC_modified_init
-            filename = path + "{}_{}_{}.{}.txt".format(option, organism_name, NC, i )
-            NC_modified = NC_modified or not os.path.isfile(filename)
+            # On vérifie si le NC a été modifie ou si la région a déjà été parsée
+            filename = path + f"{option}_{organism_name}_{NC}.{i}.txt"
+            NC_modified = NC_modified_init or not os.path.isfile(filename)
             if(NC_modified):
                 new_region_choice.append(option)
             else:
-                self.emit_log(log_signal, "Skip: option " + option + " in " + NC + " is up to date.", purple)
+                self.emit_log(log_signal, f"Skip: option {option} in {NC} is up to date.", purple)
 
         if(not len(new_region_choice)):
-            self.emit_log(log_signal, f"Pass {NC}: No regions selected", purple)
-            print(f'######################## \n \n Pass {NC}: Mutex Stop')
+            self.emit_log(log_signal, f"Pass {NC}: All regions are up to date", green)
+            ## EMIT SIGNAL 
             return
 
+        # update region choice
         cp_region_choice = new_region_choice
 
         Entrez.email = ''.join(random.choice(string.ascii_lowercase) for i in range(20)) + '@random.com'
         Entrez.api_key = '24f75a54c3b96e27fcae236d031f3cfb4909'
         
-        t = time.time()           
         # deuxieme efectch car on perd les informations du premiers
         try:
             handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gbwithparts", retmode="text", datetype='mdat')
@@ -344,16 +359,10 @@ class ParserFunctions:
                     count = count - 1
                     mutex_count.release()
                     self.emit_log(log_signal, f'Pass {NC}: Mutex Stop', purple)
-                    print(f'######################## \n \n Pass {NC}: Mutex Stop')
                     return
                 timer += 0.1
             handle = Entrez.efetch(db="nucleotide", id=NC, rettype="gbwithparts", retmode="text", datetype='mdat')
             mutex_fetch.release()
-
-
-        #print(f" ## Efetch 2: {time.time() - t}")
-
-        t = time.time()
 
         with warnings.catch_warnings(record=True) as w:
             if(not self.check_stopping(mutex_stop)):
@@ -370,8 +379,6 @@ class ParserFunctions:
             if w:
                 for warning in w:
                     log_signal.emit(warning.message, purple)
-
-        print(f" ## Handle read: {time.time() - t}")
 
         organism = handle_read.annotations['organism']
         features = handle_read.features
@@ -390,10 +397,10 @@ class ParserFunctions:
         cds_filename = ""
         filename = ""
 
-        # we update the dataframe
+        # we update the dataframe with the new extracted features for this NC
         organism_df['features'][index_df] = [f for f in file_regions]
-        # if 0 introns found, this will be deleted from the dataframe, so that we don't verify it again in
-        # in the next executions
+
+        # if 0 introns found, this will be deleted from the dataframe, so that we don't verify it again in the next executions
         if("CDS" in file_regions):
             organism_df['features'][index_df].append("intron")
 
@@ -407,17 +414,17 @@ class ParserFunctions:
                     selected_regions.append('CDS')
                 intron_is_selected = True
             else:
-                self.emit_log(log_signal,f'Pass : {NC} does not contain selected option \'{option}\'', purple)
+                self.emit_log(log_signal,f'Pass option {option} in {NC}: does not contain selected option', purple)
 
         if(not len(selected_regions)):
-            self.emit_log(log_signal,'Pass : {} does not contain any of the selected options \'{}\''.format(NC, option), purple)
-            print(f'######################## \n \n Pass : {NC} does not contain selected option \'{option}\'')
+            self.emit_log(log_signal,f'Pass {NC}: does not contain any of the selected options', purple)
             return
 
         visited_regions = [False for i in selected_regions]
 
         count_complements = 0
         nb_introns = 0
+
         for f in features:
             if(self.check_stopping(mutex_stop)):
                 mutex_count.acquire()
@@ -583,9 +590,9 @@ class ParserFunctions:
                     except:
                         pass
 
-            progress_signal.emit(0)
-            self.emit_log(log_signal, "Parsing of " + NC + " done successfully.", green)
-            print(f'############## \n \nParsing of {NC} done successfully.')
+        
+        self.emit_log(log_signal, f"Parsing of {NC} done successfully.", green)
+        progress_signal.emit(0)
 
         mutex_count.acquire()
         count = count - 1

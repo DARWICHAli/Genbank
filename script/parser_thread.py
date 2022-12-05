@@ -69,7 +69,7 @@ class ParserThread(QtCore.QThread):
 		args =  self.organism_df.loc[self.organism_df['path'].str.startswith(self.path_choice + '/')]
 		self.nb_NC = len(args)
 		self.progress_signal.emit(self.nb_NC)
-
+		
 		self.pool.map(partial(self.parser.parse_NC, region_choice = self.regions_choice, log_signal = self.log_signal, progress_signal = self.progress_signal, organism_df = self.organism_df, mutex = self.mutex, mutex_fetch = self.mutex_fetch, mutex_count = self.mutex_count, mutex_stop = self.mutex_stop), args.itertuples())
 
 

@@ -3,13 +3,12 @@ import time
 import shutil
 import pandas as pd
 import os.path
-from multiprocessing import Pool
 import pickle
 from ftp_downloader import *
+from multiprocessing import Pool
 import shutil
 import os
 import ftplib
-from time import sleep 
 from parser_thread import bdd_path
 
 save_pickle = False
@@ -57,9 +56,8 @@ class DownloaderThread(QtCore.QThread):
 
 	def remove_ill_terminated(self):
 		try:
-			bdd = open(bdd_path,"r")
-			lines = bdd.readlines()
-			bdd.close()
+			with open(bdd_path,"r") as bdd:
+				lines = bdd.readlines()
 			for l in lines:
 				try:
 					os.remove(l.strip('\n'))
@@ -152,18 +150,20 @@ class DownloaderThread(QtCore.QThread):
 								found = False
 						if not found: continue
 
-					try:
+					# try:
 						# checking if we have already added this organism to the array
 						# If so, we simply add another NC
-						organism_NC_dataframe[organism_paths_dataframe.index(organism_paths[index])].append(parsed_row[1])
-					except ValueError:
+					# 	organism_NC_dataframe[organism_paths_dataframe.index(organism_paths[index])].append(parsed_row[1])
+					# except ValueError:
 						# We encouter this organism for the first time, we add it to the array with the NC
 						#organism_names_ids.append(organism_names[index])
-						try:
-							organism_paths_dataframe.append(organism_paths[index])
-							organism_NC_dataframe.append([parsed_row[1]])
-							organism_names_dataframe.append(organism_names[index].replace(' ','_').replace('/','_').replace('[','').replace(']','').replace(':','_').replace('\'',''))
-						except: pass
+					#try:
+					organism_paths_dataframe.append(organism_paths[index])
+					organism_NC_dataframe.append(parsed_row[1])
+					organism_names_dataframe.append(organism_names[index].replace(' ','_').replace('/','_').replace('[','').replace(']','').replace(':','_').replace('\'',''))
+					#except:
+						 
+						#organism_paths_dataframe = organism_paths_dataframe[:len(organism_name)]
 					
 
 		# Store the organisms in pandas DataFrame
@@ -245,10 +245,21 @@ class DownloaderThread(QtCore.QThread):
 
 		if os.path.isdir("../pickle") and os.path.isfile("../pickle/organism_df"):
 			# Initialization
-			ftp = ftplib.FTP("ftp.ncbi.nlm.nih.gov")
-			ftp.login()
-			ftp.cwd('genomes/GENOME_REPORTS/IDS')
+			nb_tries = 5
+			for i in range(nb_tries):
+				try:
+					ftp = ftplib.FTP("ftp.ncbi.nlm.nih.gov")
+					ftp.login()
+					ftp.cwd('genomes/GENOME_REPORTS/IDS')
+					break
+				except Exception as e:
+					time.sleep(5)
+					self.log_signal.emit(f"Error FTP Connection : {e}\n ... Try Again {i}/{nb_tries} ...", purple)
 
+			
+			if (i == (nb_tries - 1)):
+				self.log_signal.emit(f"Error FTP Connection : {e}\n", purple)
+				return
 			last_ftp_change = 0
 			last_local_change = 1e50
 

@@ -72,7 +72,7 @@ class Ui_MainWindow(object):
                 self.legende_container.setSpacing(8)
                 self.legende_container.setObjectName("legende_container")
                 self.graphicViewActualise = QtWidgets.QGraphicsView(self.horizontalLayoutWidget_2)
-                self.graphicViewActualise.setStyleSheet("background-color: rgb(255, 200, 0);")
+                self.graphicViewActualise.setStyleSheet("background-color: rgb(255, 255, 255);")
                 sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
                 sizePolicy.setHorizontalStretch(1)
                 sizePolicy.setVerticalStretch(1)
@@ -89,7 +89,7 @@ class Ui_MainWindow(object):
                 sizePolicy.setVerticalStretch(0)
                 sizePolicy.setHeightForWidth(self.labelActualise.sizePolicy().hasHeightForWidth())
                 self.labelActualise.setSizePolicy(sizePolicy)
-                self.labelActualise.setStyleSheet("color: rgb(255, 200, 0);")
+                self.labelActualise.setStyleSheet("color: rgb(255, 255, 255);")
                 self.labelActualise.setAlignment(QtCore.Qt.AlignCenter)
                 self.labelActualise.setObjectName("labelActualise")
                 self.legende_container.addWidget(self.labelActualise)
@@ -103,7 +103,7 @@ class Ui_MainWindow(object):
                 self.graphicViewCree.setSizePolicy(sizePolicy)
                 self.graphicViewCree.setMaximumSize(QtCore.QSize(30, 30))
                 self.graphicViewCree.setObjectName("graphicViewCree")
-                self.graphicViewCree.setStyleSheet("background-color: rgb(0, 255, 40);")
+                self.graphicViewCree.setStyleSheet("background-color: rgb(0, 255, 0);")
                 self.legende_container.addWidget(self.graphicViewCree)
                 self.labelCree = QtWidgets.QLabel(self.horizontalLayoutWidget_2)
                 sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -114,7 +114,7 @@ class Ui_MainWindow(object):
                 self.labelCree.setStyleSheet("")
                 self.labelCree.setAlignment(QtCore.Qt.AlignCenter)
                 self.labelCree.setObjectName("labelCree")
-                self.labelCree.setStyleSheet("color: rgb(0, 255, 40);")
+                self.labelCree.setStyleSheet("color: rgb(0, 255, 0);")
                 self.legende_container.addWidget(self.labelCree)
 
                 #code couleur fichier supprimé
@@ -126,7 +126,7 @@ class Ui_MainWindow(object):
                 self.graphicViewSupprime.setSizePolicy(sizePolicy)
                 self.graphicViewSupprime.setMaximumSize(QtCore.QSize(30, 30))
                 self.graphicViewSupprime.setObjectName("graphicViewSupprime")
-                self.graphicViewSupprime.setStyleSheet("background-color: rgb(255, 0, 0);")
+                self.graphicViewSupprime.setStyleSheet("background-color: rgb(255, 0, 255);")
                 self.legende_container.addWidget(self.graphicViewSupprime)
                 self.labelSupprime = QtWidgets.QLabel(self.horizontalLayoutWidget_2)
                 sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -137,9 +137,9 @@ class Ui_MainWindow(object):
                 self.labelSupprime.setStyleSheet("")
                 self.labelSupprime.setAlignment(QtCore.Qt.AlignCenter)
                 self.labelSupprime.setObjectName("labelSupprime")
-                self.labelSupprime.setStyleSheet("color: rgb(255, 0, 0);")
+                self.labelSupprime.setStyleSheet("color: rgb(255, 0, 255);")
                 self.legende_container.addWidget(self.labelSupprime)
-                self.left_container.addLayout(self.legende_container)
+                #self.left_container.addLayout(self.legende_container)
 
                 # layout arborescence
                 self.layout_for_tree = QtWidgets.QVBoxLayout()
@@ -221,7 +221,7 @@ class Ui_MainWindow(object):
                 self.copyright = QtWidgets.QLabel()
                 self.copyright.setStyleSheet("font: 8.5pt Futura; background-color: rgb(0, 4, 38);\n" "color:rgb(255, 255, 255);")
                 self.copyright.setObjectName("copyright")
-                self.copyright.setText("©2022   Darwich A | Elamine M | Janati S | Maliki Y | Qadadri H ")
+                self.copyright.setText("©2023   Darwich A | Elamine M | Janati S | Maliki Y | Qadadri H ")
                 self.copyright.setAlignment(QtCore.Qt.AlignCenter)
 
                 self.copyrightContainer = QtWidgets.QVBoxLayout()
@@ -409,6 +409,7 @@ class Ui_MainWindow(object):
 
 
                 self.right_container.addLayout(self.container_log)
+                self.right_container.addLayout(self.legende_container)
                 self.right_container.setStretch(0, 2)
                 self.right_container.setStretch(1, 4)
                 self.right_container.setStretch(2, 2)
@@ -463,10 +464,10 @@ class Ui_MainWindow(object):
         def retranslateUi(self, MainWindow):
                 _translate = QtCore.QCoreApplication.translate
                 MainWindow.setWindowTitle(_translate("MainWindow", "Genbank"))
-                self.labelArborescence.setText(_translate("MainWindow", "Résultats"))
-                self.labelActualise.setText(_translate("MainWindow", "Actualisé"))
-                self.labelCree.setText(_translate("MainWindow", "Créé"))
-                self.labelSupprime.setText(_translate("MainWindow", "Supprimé"))
+                self.labelArborescence.setText(_translate("MainWindow", "Arborescence"))
+                self.labelActualise.setText(_translate("MainWindow", "Logs Loading"))
+                self.labelCree.setText(_translate("MainWindow", "Logs Done"))
+                self.labelSupprime.setText(_translate("MainWindow", "Logs Error"))
                 self.buttonStart.setText(_translate("MainWindow", "Téléchargement"))
                 self.labelPreferences.setText(_translate("MainWindow", "Préférences"))
                 self.labelRegions.setText(_translate("MainWindow", "Régions Fonctionnelles:"))
